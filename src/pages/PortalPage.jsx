@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, Calendar, CheckCircle2, FileText, Globe, LogOut, Mail, Send } from 'lucide-react'
+import { AlertTriangle, Calendar, CheckCircle2, Download, FileText, Globe, LogOut, Mail, Send } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
+import { useContent } from '../context/ContentContext'
 import MascotIcon from '../components/MascotIcon'
+
+// Lazy-load jsPDF (lumayan besar) hanya saat tombol unduh benar-benar diklik,
+// supaya pengunjung website biasa (yang tidak pernah buka /portal) tidak ikut
+// memuatnya di beranda.
+const downloadInvoicePdf = (...args) => import('../lib/pdfGenerator').then((m) => m.generateInvoicePdf(...args))
+const downloadReceiptPdf = (...args) => import('../lib/pdfGenerator').then((m) => m.generateReceiptPdf(...args))
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -72,6 +79,8 @@ function LoginForm() {
 }
 
 function Dashboard({ session }) {
+  const { content } = useContent()
+  const brand = { name: content.brand?.name, address: content.contact?.address, phone: content.contact?.phone, email: content.contact?.email }
   const [client, setClient] = useState(null)
   const [projects, setProjects] = useState([])
   const [invoices, setInvoices] = useState([])
@@ -189,6 +198,13 @@ function Dashboard({ session }) {
               </p>
               <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${INVOICE_STATUS_COLOR[inv.status]}`}>{INVOICE_STATUS_LABEL[inv.status]}</span>
             </div>
+            <button
+              type="button"
+              onClick={() => downloadInvoicePdf(inv, client, brand)}
+              className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-cyan-royal hover:text-cyan-300"
+            >
+              <Download size={13} /> Unduh PDF Invoice
+            </button>
             <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
               <div>
                 <p className="text-slate-500">Total</p>
@@ -207,9 +223,14 @@ function Dashboard({ session }) {
               <div className="mt-3 border-t border-white/10 pt-3">
                 <p className="mb-1.5 text-[11px] font-semibold text-slate-400">Riwayat Pembayaran</p>
                 {inv.acc_payments.map((p) => (
-                  <p key={p.id} className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                    <CheckCircle2 size={11} className="text-emerald-400" /> {p.payment_date} &bull; {idr(p.amount_paid)} &bull; {p.receipt_number}
-                  </p>
+                  <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 size={11} className="text-emerald-400" /> {p.payment_date} &bull; {idr(p.amount_paid)} &bull; {p.receipt_number}
+                    </span>
+                    <button type="button" onClick={() => downloadReceiptPdf(p, inv, client, brand)} className="flex items-center gap-1 text-cyan-royal hover:text-cyan-300">
+                      <Download size={11} /> Unduh Kuitansi
+                    </button>
+                  </div>
                 ))}
               </div>
             )}

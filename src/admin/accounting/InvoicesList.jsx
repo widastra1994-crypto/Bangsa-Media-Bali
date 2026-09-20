@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
-import { AlertTriangle, Mail, Plus } from 'lucide-react'
+import { AlertTriangle, Download, Mail, Plus } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { sendFinanceEmail } from '../../lib/financeEmail'
 import { useSupabaseTable } from './useSupabaseTable'
 import { logAudit } from './auditLog'
+import { useContent } from '../../context/ContentContext'
+
+// Lazy-load jsPDF (lumayan besar) hanya saat tombol unduh benar-benar diklik,
+// supaya tidak ikut membebani bundle awal admin panel.
+const downloadInvoicePdf = (...args) => import('../../lib/pdfGenerator').then((m) => m.generateInvoicePdf(...args))
+const downloadReceiptPdf = (...args) => import('../../lib/pdfGenerator').then((m) => m.generateReceiptPdf(...args))
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -98,12 +104,14 @@ export default function InvoicesList() {
   const [sendingId, setSendingId] = useState(null)
   const [notice, setNotice] = useState('')
   const bankAccounts = useSupabaseTable('acc_bank_accounts')
+  const { content } = useContent()
+  const brand = { name: content.brand?.name, address: content.contact?.address, phone: content.contact?.phone, email: content.contact?.email }
 
   const load = useCallback(() => {
     setLoading(true)
     supabase
       .from('acc_invoices')
-      .select('*, acc_clients(company_name, email), acc_projects(website_name), acc_invoice_reminder_log(stage)')
+      .select('*, acc_clients(company_name, email, pic_name, address), acc_projects(website_name), acc_invoice_reminder_log(stage), acc_payments(*)')
       .order('created_at', { ascending: false })
       .then(({ data, error: err }) => {
         if (err) setError(err.message)
@@ -203,7 +211,32 @@ export default function InvoicesList() {
                 <button type="button" disabled={sendingId === inv.id} onClick={() => resendEmail(inv)} className="btn-secondary !px-3 !py-1.5 text-xs disabled:opacity-60">
                   <Mail size={13} /> {sendingId === inv.id ? 'Mengirim...' : 'Kirim Ulang Email'}
                 </button>
+                <button type="button" onClick={() => downloadInvoicePdf(inv, inv.acc_clients, brand)} className="btn-secondary !px-3 !py-1.5 text-xs">
+                  <Download size={13} /> Unduh PDF Invoice
+                </button>
               </div>
+
+              {inv.acc_payments?.length > 0 && (
+                <div className="mt-3 border-t border-white/5 pt-3">
+                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Riwayat Pembayaran</p>
+                  <div className="space-y-1.5">
+                    {inv.acc_payments.map((p) => (
+                      <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+                        <span>
+                          {p.payment_date} &bull; {idr(p.amount_paid)} &bull; {p.receipt_number}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => downloadReceiptPdf(p, inv, inv.acc_clients, brand)}
+                          className="flex items-center gap-1 text-cyan-royal hover:text-cyan-300"
+                        >
+                          <Download size={11} /> Unduh Kuitansi
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/5 pt-3 text-[11px]">
                 <label className="flex items-center gap-1.5 text-slate-400">
