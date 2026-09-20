@@ -28,7 +28,11 @@ create policy "Public can submit leads"
 
 -- View tanpa data pribadi (tanpa nama/telepon/email), hanya tanggal+jam,
 -- dipakai kalkulator untuk menandai slot yang sudah penuh. Aman dibaca publik.
-create or replace view booked_slots as
+-- security_invoker=true supaya view menghormati RLS pemanggil, bukan RLS pembuat view.
+drop view if exists booked_slots;
+create view booked_slots
+  with (security_invoker = true)
+  as
   select consult_date, consult_time
   from consultation_leads
   where consult_date is not null and consult_time is not null;
