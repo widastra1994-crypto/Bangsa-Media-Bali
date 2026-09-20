@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { sendFinanceEmail } from '../../lib/financeEmail'
 import { useSupabaseTable } from './useSupabaseTable'
+import { logAudit } from './auditLog'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -35,6 +36,7 @@ const emptyForm = {
   domainName: '',
   domainVendorId: '',
   serverVendorId: '',
+  websiteUrl: '',
   projectDate: new Date().toISOString().slice(0, 10),
   registrationDate: new Date().toISOString().slice(0, 10),
   dealPrice: '',
@@ -132,12 +134,13 @@ export default function TransactionForm() {
       const project = projectRows[0]
 
       // 3. Aset Digital
-      if (form.domainName || form.domainVendorId || form.serverVendorId || Number(form.domainCost) || Number(form.serverCost)) {
+      if (form.domainName || form.domainVendorId || form.serverVendorId || form.websiteUrl || Number(form.domainCost) || Number(form.serverCost)) {
         const { error: assetErr } = await supabase.from('acc_digital_assets').insert({
           project_id: project.id,
           domain_vendor_id: form.domainVendorId || null,
           server_vendor_id: form.serverVendorId || null,
           domain_name: form.domainName || null,
+          website_url: form.websiteUrl || null,
           registration_date: form.registrationDate || null,
           expiry_date: form.registrationDate ? addOneYear(form.registrationDate) : null,
           domain_cost: Number(form.domainCost) || 0,
@@ -232,6 +235,10 @@ export default function TransactionForm() {
           emailInfo += receiptRes.ok ? 'Email kuitansi deposit terkirim.' : `Email kuitansi belum terkirim (${receiptRes.error || 'lihat konfigurasi Resend'}).`
         }
       }
+
+      logAudit('create', 'acc_projects', project.id, {
+        newValues: { client: clientRecord.company_name, website: form.websiteName, deal_price: dealPrice, invoice_number: invoice.invoice_number, deposit },
+      })
 
       setResult({ invoiceNumber: invoice.invoice_number, emailInfo })
       resetForm()
@@ -339,6 +346,7 @@ export default function TransactionForm() {
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gold-soft">3. Aset Digital & Beban (opsional)</h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <input className="input-field" placeholder="Nama Domain (mis. kliena.com)" value={form.domainName} onChange={(e) => set({ domainName: e.target.value })} />
+          <input className="input-field" placeholder="URL Website (untuk monitoring uptime, mis. https://kliena.com)" value={form.websiteUrl} onChange={(e) => set({ websiteUrl: e.target.value })} />
           <div>
             <label className="label-field">Tanggal Registrasi</label>
             <input type="date" className="input-field" value={form.registrationDate} onChange={(e) => set({ registrationDate: e.target.value })} />

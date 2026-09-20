@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Download } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
+import { logAudit } from './auditLog'
+import { exportToCsv } from './csvExport'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -35,19 +37,43 @@ export default function CommissionsList() {
   }, [load])
 
   const markPaid = async (id) => {
+    const row = rows.find((r) => r.id === id)
     const { error: err } = await supabase.from('acc_commissions').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('id', id)
     if (err) setError(err.message)
-    else load()
+    else {
+      logAudit('commission_paid', 'acc_commissions', id, { newValues: { staff: row?.acc_staff_members?.name, amount: row?.commission_amount } })
+      load()
+    }
   }
 
   const totalPending = rows.filter((r) => r.status === 'pending').reduce((s, r) => s + Number(r.commission_amount), 0)
   const totalPayable = rows.filter((r) => r.status === 'payable').reduce((s, r) => s + Number(r.commission_amount), 0)
   const totalPaid = rows.filter((r) => r.status === 'paid').reduce((s, r) => s + Number(r.commission_amount), 0)
 
+  const exportCommissions = () =>
+    exportToCsv(
+      'komisi-tim',
+      rows.map((r) => ({
+        Staf: r.acc_staff_members?.name,
+        Proyek: r.acc_projects?.website_name,
+        Klien: r.acc_projects?.acc_clients?.company_name,
+        Peran: ROLE_LABEL[r.role_in_project],
+        Nominal: r.commission_amount,
+        Status: STATUS_LABEL[r.status],
+      })),
+    )
+
   return (
     <div>
-      <h2 className="text-lg font-semibold text-white">Komisi Tim</h2>
-      <p className="mt-1 text-sm text-slate-400">Komisi otomatis pindah dari Pending ke Siap Dicairkan begitu invoice proyek terkait Lunas.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Komisi Tim</h2>
+          <p className="mt-1 text-sm text-slate-400">Komisi otomatis pindah dari Pending ke Siap Dicairkan begitu invoice proyek terkait Lunas.</p>
+        </div>
+        <button type="button" onClick={exportCommissions} disabled={rows.length === 0} className="btn-secondary !px-3 !py-2 text-xs disabled:opacity-50">
+          <Download size={14} /> Ekspor CSV
+        </button>
+      </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">

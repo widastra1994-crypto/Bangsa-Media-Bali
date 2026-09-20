@@ -3,6 +3,7 @@ import { AlertTriangle, Mail, Plus } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { sendFinanceEmail } from '../../lib/financeEmail'
 import { useSupabaseTable } from './useSupabaseTable'
+import { logAudit } from './auditLog'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -41,6 +42,10 @@ function PaymentForm({ invoice, bankAccounts, onDone }) {
         bank_account_id: bankAccountId || null,
       })
       if (err) throw new Error(err.message)
+
+      logAudit('payment_recorded', 'acc_invoices', invoice.id, {
+        newValues: { invoice_number: invoice.invoice_number, amount: Number(amount), method },
+      })
 
       const client = invoice.acc_clients
       if (client?.email) {
@@ -110,6 +115,12 @@ export default function InvoicesList() {
   useEffect(() => {
     load()
   }, [load])
+
+  const updatePph23 = async (id, patch) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)))
+    const { error: err } = await supabase.from('acc_invoices').update(patch).eq('id', id)
+    if (err) setError(err.message)
+  }
 
   const resendEmail = async (invoice) => {
     const client = invoice.acc_clients
@@ -192,6 +203,27 @@ export default function InvoicesList() {
                 <button type="button" disabled={sendingId === inv.id} onClick={() => resendEmail(inv)} className="btn-secondary !px-3 !py-1.5 text-xs disabled:opacity-60">
                   <Mail size={13} /> {sendingId === inv.id ? 'Mengirim...' : 'Kirim Ulang Email'}
                 </button>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/5 pt-3 text-[11px]">
+                <label className="flex items-center gap-1.5 text-slate-400">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(inv.is_pph23_withheld)}
+                    onChange={(e) => updatePph23(inv.id, { is_pph23_withheld: e.target.checked })}
+                    className="h-3.5 w-3.5 accent-gold"
+                  />
+                  Kena Potong PPh 23
+                </label>
+                {inv.is_pph23_withheld && (
+                  <input
+                    type="text"
+                    defaultValue={inv.pph23_bukti_potong || ''}
+                    onBlur={(e) => e.target.value !== (inv.pph23_bukti_potong || '') && updatePph23(inv.id, { pph23_bukti_potong: e.target.value })}
+                    placeholder="No. Bukti Potong"
+                    className="input-field !w-40 !py-1 text-[11px]"
+                  />
+                )}
               </div>
 
               {inv.acc_invoice_reminder_log?.length > 0 && (

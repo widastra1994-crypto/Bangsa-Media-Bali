@@ -390,3 +390,83 @@ select cron.schedule(
   );
   $$
 );
+
+-- ============================================================================
+-- FASE 4a: REKONSILIASI MUTASI BANK (via impor CSV, BUKAN scraper kredensial)
+-- ============================================================================
+-- Adaptasi keamanan dari FRD: "Direct Bank Scraper" yang menyimpan password
+-- internet banking TIDAK dibuat (risiko keamanan tinggi -- menyimpan
+-- kredensial perbankan pihak ketiga bukan praktik yang aman). Sebagai
+-- gantinya: admin ekspor mutasi dari internet banking ke CSV, lalu impor di
+-- CMS (tab Rekonsiliasi Bank). Pencocokan otomatis tetap berjalan sesuai
+-- spesifikasi (mencocokkan nominal unik ke invoice yang belum lunas).
+create table if not exists public.acc_bank_mutations (
+  id uuid primary key default gen_random_uuid(),
+  bank_account_id uuid references public.acc_bank_accounts(id),
+  mutation_date date not null,
+  description text,
+  amount numeric(15,2) not null,
+  direction text not null check (direction in ('in','out')),
+  matched_payment_id uuid references public.acc_payments(id),
+  is_matched boolean not null default false,
+  imported_at timestamptz not null default now(),
+  imported_by uuid references public.profiles(id)
+);
+
+alter table public.acc_bank_mutations enable row level security;
+drop policy if exists "authenticated_full_access" on public.acc_bank_mutations;
+create policy "authenticated_full_access" on public.acc_bank_mutations for all to authenticated using (true) with check (true);
+
+-- ============================================================================
+-- FASE 4b: MONITORING UPTIME WEBSITE
+-- ============================================================================
+-- Catatan: pengecekan masa berlaku sertifikat SSL TIDAK diimplementasikan --
+-- inspeksi detail sertifikat TLS di runtime Deno Edge Function tidak cukup
+-- andal untuk fitur produksi. Uptime check (status HTTP) berjalan penuh,
+-- dijadwalkan tiap 30 menit via pg_cron + Edge Function "uptime-check".
+alter table public.acc_digital_assets add column if not exists website_url text;
+
+select cron.schedule(
+  'uptime-check-job',
+  '*/30 * * * *',
+  $$
+  select net.http_post(
+    url := 'https://ekzkxgpksqoyopzvaxsx.supabase.co/functions/v1/uptime-check',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer sb_publishable_Zl9V7bkJkh9Tb-Bmt65wPw_fnYvmbYQ'
+    ),
+    body := '{}'::jsonb
+  );
+  $$
+);
+-- Aktivasi email alert website down: set RESEND_API_KEY, FROM_EMAIL, dan
+-- INTERNAL_ALERT_EMAIL (email tim teknis internal) di Supabase Dashboard >
+-- Edge Functions > uptime-check > Secrets.
+
+-- ============================================================================
+-- FASE 5a: PROFIL & PELACAKAN PAJAK (estimasi internal, BUKAN sistem e-Filing
+-- resmi -- selalu verifikasi dengan konsultan pajak sebelum lapor SPT)
+-- ============================================================================
+create table if not exists public.acc_tax_profile (
+  id int primary key default 1,
+  npwp text,
+  is_pkp boolean not null default false,
+  business_name text,
+  pph_final_rate numeric(5,2) not null default 0.5,
+  pph23_rate numeric(5,2) not null default 2,
+  ppn_rate numeric(5,2) not null default 11,
+  updated_at timestamptz not null default now(),
+  constraint acc_tax_profile_single_row check (id = 1)
+);
+
+alter table public.acc_tax_profile enable row level security;
+drop policy if exists "authenticated_full_access" on public.acc_tax_profile;
+create policy "authenticated_full_access" on public.acc_tax_profile for all to authenticated using (true) with check (true);
+
+alter table public.acc_invoices add column if not exists is_pph23_withheld boolean not null default false;
+alter table public.acc_invoices add column if not exists pph23_bukti_potong text;
+alter table public.acc_invoices add column if not exists is_ppn_applicable boolean not null default false;
+
+-- FASE 5b: Audit Trail memakai tabel acc_audit_logs yang sudah ada sejak
+-- Fase 1 -- kini benar-benar dipakai dari frontend (lihat src/admin/accounting/auditLog.js).

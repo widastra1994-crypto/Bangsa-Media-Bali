@@ -21,6 +21,9 @@ import MasterDataEditor from './accounting/MasterDataEditor'
 import TransactionForm from './accounting/TransactionForm'
 import ProjectsList from './accounting/ProjectsList'
 import DigitalAssetsList from './accounting/DigitalAssetsList'
+import BankReconciliation from './accounting/BankReconciliation'
+import TaxModule from './accounting/TaxModule'
+import AuditTrailViewer from './accounting/AuditTrailViewer'
 import InvoicesList from './accounting/InvoicesList'
 import ExpensesEditor from './accounting/ExpensesEditor'
 import CommissionsList from './accounting/CommissionsList'
@@ -53,6 +56,9 @@ const TAB_GROUPS = [
       { id: 'acc-projects', label: 'Daftar Proyek', Component: ProjectsList },
       { id: 'acc-assets', label: 'Aset Digital', Component: DigitalAssetsList },
       { id: 'acc-invoices', label: 'Invoice & Piutang', Component: InvoicesList },
+      { id: 'acc-bank', label: 'Rekonsiliasi Bank', Component: BankReconciliation },
+      { id: 'acc-tax', label: 'Pajak', Component: TaxModule },
+      { id: 'acc-audit', label: 'Audit Trail', Component: AuditTrailViewer },
       { id: 'acc-expenses', label: 'Pengeluaran', Component: ExpensesEditor },
       { id: 'acc-commissions', label: 'Komisi Tim', Component: CommissionsList },
     ],

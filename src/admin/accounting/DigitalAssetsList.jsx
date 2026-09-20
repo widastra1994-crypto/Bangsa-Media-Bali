@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { AlertTriangle, Mail, RefreshCw } from 'lucide-react'
+import { AlertTriangle, Globe, Mail, RefreshCw } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { sendFinanceEmail } from '../../lib/financeEmail'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
+
+const UPTIME_LABEL = { up: 'Online', down: 'Down', degraded: 'Lambat' }
+const UPTIME_COLOR = { up: 'text-emerald-400', down: 'text-red-400', degraded: 'text-amber-400' }
 
 const STATUS_LABEL = { active: 'Aktif', pending_renewal: 'Menunggu Perpanjangan', grace_period: 'Masa Tenggang', expired: 'Kedaluwarsa', terminated: 'Dihentikan' }
 const STATUS_OPTIONS = Object.keys(STATUS_LABEL)
@@ -110,6 +113,12 @@ export default function DigitalAssetsList() {
     if (err) setError(err.message)
   }
 
+  const updateWebsiteUrl = async (id, website_url) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, website_url } : r)))
+    const { error: err } = await supabase.from('acc_digital_assets').update({ website_url: website_url || null }).eq('id', id)
+    if (err) setError(err.message)
+  }
+
   return (
     <div>
       <h2 className="text-lg font-semibold text-white">Aset Digital (Domain & Server)</h2>
@@ -173,6 +182,24 @@ export default function DigitalAssetsList() {
                     {days === null ? '-' : days < 0 ? `Lewat ${Math.abs(days)} hari` : `${days} hari`}
                   </p>
                 </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <div className="flex flex-1 items-center gap-1.5">
+                  <Globe size={13} className="shrink-0 text-slate-500" />
+                  <input
+                    type="text"
+                    defaultValue={asset.website_url || ''}
+                    onBlur={(e) => e.target.value !== (asset.website_url || '') && updateWebsiteUrl(asset.id, e.target.value)}
+                    placeholder="URL website untuk monitoring uptime (https://...)"
+                    className="input-field !py-1.5 text-xs"
+                  />
+                </div>
+                {asset.website_url && (
+                  <p className="shrink-0 text-xs">
+                    Status: <span className={`font-semibold ${UPTIME_COLOR[asset.uptime_status] || 'text-slate-500'}`}>{UPTIME_LABEL[asset.uptime_status] || 'Belum dicek'}</span>
+                  </p>
+                )}
               </div>
 
               {asset.acc_asset_reminder_log?.filter((r) => r.expiry_date === asset.expiry_date).length > 0 && (
