@@ -49,6 +49,7 @@ function LangToggle({ compact }) {
 export default function Navbar() {
   const { content } = useDisplayContent()
   const { nav } = content
+  const primaryMenu = nav.menu.filter((item) => item.primary)
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
@@ -70,7 +71,7 @@ export default function Navbar() {
         </a>
 
         <ul className="hidden items-center gap-7 lg:flex">
-          {nav.menu.map((item) => (
+          {primaryMenu.map((item) => (
             <li key={item.id}>
               <NavLink
                 item={item}
@@ -100,7 +101,7 @@ export default function Navbar() {
       {open && (
         <div className="glass-panel mx-4 mb-4 rounded-2xl px-5 py-4 lg:hidden">
           <ul className="flex flex-col gap-4">
-            {nav.menu.map((item) => (
+            {primaryMenu.map((item) => (
               <li key={item.id}>
                 <NavLink item={item} onClick={() => setOpen(false)} className="block text-sm font-medium text-slate-200 hover:text-gold-soft" />
               </li>

@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { useDisplayContent } from '../context/LanguageContext'
 
 const SPEECH_PHRASES = [
   'Om Swastyastu! Butuh website secepat kilat?',
@@ -11,7 +12,10 @@ const SPEECH_PHRASES = [
 // Maskot robot Bali detail: chrome body, badong emas, kampuh endek siber, udeng neon + kuncung.
 export default function HeroMascot() {
   const uid = useId()
+  const { content } = useDisplayContent()
   const [phraseIndex, setPhraseIndex] = useState(-1)
+  const [imageFailed, setImageFailed] = useState(false)
+  const customImage = content.hero?.mascotImage
 
   const speak = () => setPhraseIndex((i) => (i + 1) % SPEECH_PHRASES.length)
 
@@ -35,6 +39,14 @@ export default function HeroMascot() {
             </div>
           )}
 
+          {customImage && !imageFailed ? (
+            <img
+              src={customImage}
+              alt="Maskot Bangsa Media Bali"
+              className="relative z-10 h-full w-full animate-float rounded-3xl object-contain drop-shadow-[0_15px_30px_rgba(67,100,247,0.35)] transition-transform duration-300 group-hover:scale-[1.03]"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
           <svg
             viewBox="0 0 400 480"
             className="relative z-10 h-full w-full animate-float drop-shadow-[0_15px_30px_rgba(67,100,247,0.35)] transition-transform duration-300 group-hover:scale-[1.03]"
@@ -171,6 +183,7 @@ export default function HeroMascot() {
               <circle cx="335" cy="190" r="5" fill="#67E8F9" className="animate-glow" />
             </g>
           </svg>
+          )}
         </button>
       </div>
 

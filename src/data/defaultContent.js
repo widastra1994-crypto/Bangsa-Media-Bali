@@ -6,17 +6,18 @@ export const defaultContent = {
     subBrand: 'IT & Digital Solutions',
   },
   nav: {
+    // `primary: true` -> tampil di menu navbar utama. `primary: false` -> hanya tampil di footer.
     menu: [
-      { id: 'beranda', label: 'Beranda', href: '#beranda' },
-      { id: 'layanan', label: 'Layanan', href: '#layanan' },
-      { id: 'paket', label: 'Paket Harga', href: '#paket' },
-      { id: 'kalkulator', label: 'Estimasi Biaya', href: '#kalkulator' },
-      { id: 'portofolio', label: 'Portofolio', href: '#portofolio' },
-      { id: 'testimoni', label: 'Testimoni', href: '#testimoni' },
-      { id: 'blog', label: 'Blog', href: '/blog' },
-      { id: 'keunggulan', label: 'Keunggulan', href: '#keunggulan' },
-      { id: 'tentang', label: 'Tentang', href: '#tentang' },
-      { id: 'kontak', label: 'Kontak', href: '#kontak' },
+      { id: 'beranda', label: 'Beranda', href: '#beranda', primary: true },
+      { id: 'layanan', label: 'Layanan', href: '#layanan', primary: false },
+      { id: 'paket', label: 'Paket Harga', href: '#paket', primary: true },
+      { id: 'kalkulator', label: 'Estimasi Biaya', href: '#kalkulator', primary: false },
+      { id: 'portofolio', label: 'Portofolio', href: '#portofolio', primary: true },
+      { id: 'testimoni', label: 'Testimoni', href: '#testimoni', primary: false },
+      { id: 'blog', label: 'Blog', href: '/blog', primary: false },
+      { id: 'keunggulan', label: 'Keunggulan', href: '#keunggulan', primary: false },
+      { id: 'tentang', label: 'Tentang', href: '#tentang', primary: true },
+      { id: 'kontak', label: 'Kontak', href: '#kontak', primary: false },
     ],
     ctaLabel: 'Konsultasi Sekarang',
   },
@@ -27,6 +28,8 @@ export const defaultContent = {
       'Bangsa Media Bali memadukan teknologi modern dengan kearifan lokal Bali untuk membangun website, sistem bisnis, dan strategi digital yang membawa brand Anda melesat di era digital.',
     ctaPrimary: 'Konsultasi Sekarang',
     ctaSecondary: 'Lihat Portofolio',
+    // Kosongkan untuk pakai maskot robot animasi bawaan. Isi URL gambar untuk menggantinya.
+    mascotImage: '',
     badges: [
       { label: 'Proyek Selesai', value: '120+' },
       { label: 'Klien Puas', value: '95%' },

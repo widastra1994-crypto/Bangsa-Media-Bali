@@ -51,11 +51,13 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} {footer.copyText}
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            {nav.menu.map((item) => (
-              <a key={item.id} href={item.href} className="hover:text-slate-300">
-                {item.label}
-              </a>
-            ))}
+            {nav.menu
+              .filter((item) => !item.primary)
+              .map((item) => (
+                <a key={item.id} href={item.href} className="hover:text-slate-300">
+                  {item.label}
+                </a>
+              ))}
             {footer.socials.map((s) => (
               <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-slate-300">
                 {s.label}

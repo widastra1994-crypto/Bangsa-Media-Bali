@@ -26,14 +26,16 @@ export default function BrandNavEditor() {
   const addMenuItem = () => {
     nav.setDraft({
       ...nav.draft,
-      menu: [...nav.draft.menu, { id: `menu-${Date.now()}`, label: 'Menu Baru', href: '#' }],
+      menu: [...nav.draft.menu, { id: `menu-${Date.now()}`, label: 'Menu Baru', href: '#', primary: false }],
     })
   }
 
   return (
     <div>
       <h2 className="text-lg font-semibold text-white">Brand & Navigasi</h2>
-      <p className="mt-1 text-sm text-slate-400">Kelola nama brand dan menu navbar.</p>
+      <p className="mt-1 text-sm text-slate-400">
+        Kelola nama brand dan menu navbar. Menu yang dicentang "Tampil di Navbar Utama" akan tampil di menu atas; sisanya otomatis tampil di footer.
+      </p>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Nama Brand">
@@ -57,6 +59,15 @@ export default function BrandNavEditor() {
             <Field label="Tautan (href)">
               <TextInput value={item.href} onChange={(v) => updateMenuItem(idx, 'href', v)} />
             </Field>
+            <label className="flex items-center gap-2 text-xs text-slate-300 sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={Boolean(item.primary)}
+                onChange={(e) => updateMenuItem(idx, 'primary', e.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-white/5 accent-gold"
+              />
+              Tampil di Navbar Utama (jika tidak dicentang, hanya tampil di footer)
+            </label>
           </ArrayCard>
         ))}
         <AddButton onClick={addMenuItem} label="Tambah Menu" />
