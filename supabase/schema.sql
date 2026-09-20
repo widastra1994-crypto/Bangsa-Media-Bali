@@ -1,4 +1,8 @@
 -- Jalankan seluruh isi file ini di Supabase Dashboard > SQL Editor > New query > Run.
+--
+-- Modul Akunting (Fase 1: Master Data, Transaksi Terpadu, Invoice/Piutang)
+-- ada di file terpisah: supabase/schema_akunting.sql -- dipisah karena data
+-- akunting sensitif dan tidak berbagi tabel apa pun dengan konten website.
 
 create table if not exists consultation_leads (
   id uuid primary key default gen_random_uuid(),

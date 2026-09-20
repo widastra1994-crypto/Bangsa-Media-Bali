@@ -16,22 +16,48 @@ import AboutEditor from './editors/AboutEditor'
 import ContactFooterEditor from './editors/ContactFooterEditor'
 import AssistantEditor from './editors/AssistantEditor'
 import AnalyticsDashboard from './editors/AnalyticsDashboard'
+import AccountingDashboard from './accounting/AccountingDashboard'
+import MasterDataEditor from './accounting/MasterDataEditor'
+import TransactionForm from './accounting/TransactionForm'
+import ProjectsList from './accounting/ProjectsList'
+import InvoicesList from './accounting/InvoicesList'
+import ExpensesEditor from './accounting/ExpensesEditor'
+import CommissionsList from './accounting/CommissionsList'
 
-const TABS = [
-  { id: 'analytics', label: 'Dashboard Analitik', Component: AnalyticsDashboard },
-  { id: 'brand', label: 'Brand & Navigasi', Component: BrandNavEditor },
-  { id: 'hero', label: 'Hero', Component: HeroEditor },
-  { id: 'services', label: 'Layanan', Component: ServicesEditor },
-  { id: 'pricing', label: 'Paket Harga', Component: PricingEditor },
-  { id: 'calculator', label: 'Kalkulator', Component: CalculatorEditor },
-  { id: 'portfolio', label: 'Portofolio', Component: PortfolioEditor },
-  { id: 'testimonials', label: 'Testimoni', Component: TestimonialsEditor },
-  { id: 'blog', label: 'Blog', Component: BlogEditor },
-  { id: 'advantages', label: 'Keunggulan', Component: AdvantagesEditor },
-  { id: 'about', label: 'Tentang', Component: AboutEditor },
-  { id: 'contact', label: 'Kontak & Footer', Component: ContactFooterEditor },
-  { id: 'assistant', label: 'Asisten Chat', Component: AssistantEditor },
+const TAB_GROUPS = [
+  {
+    group: 'Konten Website',
+    tabs: [
+      { id: 'analytics', label: 'Dashboard Analitik', Component: AnalyticsDashboard },
+      { id: 'brand', label: 'Brand & Navigasi', Component: BrandNavEditor },
+      { id: 'hero', label: 'Hero', Component: HeroEditor },
+      { id: 'services', label: 'Layanan', Component: ServicesEditor },
+      { id: 'pricing', label: 'Paket Harga', Component: PricingEditor },
+      { id: 'calculator', label: 'Kalkulator', Component: CalculatorEditor },
+      { id: 'portfolio', label: 'Portofolio', Component: PortfolioEditor },
+      { id: 'testimonials', label: 'Testimoni', Component: TestimonialsEditor },
+      { id: 'blog', label: 'Blog', Component: BlogEditor },
+      { id: 'advantages', label: 'Keunggulan', Component: AdvantagesEditor },
+      { id: 'about', label: 'Tentang', Component: AboutEditor },
+      { id: 'contact', label: 'Kontak & Footer', Component: ContactFooterEditor },
+      { id: 'assistant', label: 'Asisten Chat', Component: AssistantEditor },
+    ],
+  },
+  {
+    group: 'Akunting',
+    tabs: [
+      { id: 'acc-dashboard', label: 'Dashboard Akunting', Component: AccountingDashboard },
+      { id: 'acc-master', label: 'Master Data', Component: MasterDataEditor },
+      { id: 'acc-transaction', label: 'Transaksi Baru', Component: TransactionForm },
+      { id: 'acc-projects', label: 'Daftar Proyek', Component: ProjectsList },
+      { id: 'acc-invoices', label: 'Invoice & Piutang', Component: InvoicesList },
+      { id: 'acc-expenses', label: 'Pengeluaran', Component: ExpensesEditor },
+      { id: 'acc-commissions', label: 'Komisi Tim', Component: CommissionsList },
+    ],
+  },
 ]
+
+const TABS = TAB_GROUPS.flatMap((g) => g.tabs)
 
 export default function AdminApp() {
   const { authed: sessionAuthed, loading } = useAdminSession()
@@ -92,18 +118,25 @@ export default function AdminApp() {
 
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-6 lg:flex-row lg:px-8">
         <aside className="lg:w-64 lg:shrink-0">
-          <nav className="glass-panel flex gap-2 overflow-x-auto rounded-2xl p-2 lg:flex-col lg:overflow-visible">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`whitespace-nowrap rounded-xl px-4 py-2.5 text-left text-sm font-medium transition-colors ${
-                  activeTab === tab.id ? 'bg-gold/15 text-gold-soft' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                }`}
-              >
-                {tab.label}
-              </button>
+          <nav className="glass-panel flex flex-col gap-4 overflow-x-auto rounded-2xl p-2 lg:overflow-visible">
+            {TAB_GROUPS.map((group) => (
+              <div key={group.group}>
+                <p className="px-3 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{group.group}</p>
+                <div className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
+                  {group.tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`whitespace-nowrap rounded-xl px-4 py-2.5 text-left text-sm font-medium transition-colors ${
+                        activeTab === tab.id ? 'bg-gold/15 text-gold-soft' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
         </aside>
