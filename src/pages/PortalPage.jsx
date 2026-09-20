@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { useContent } from '../context/ContentContext'
 import MascotIcon from '../components/MascotIcon'
 import SignaturePad from '../components/SignaturePad'
+import ProjectProgress from '../components/ProjectProgress'
 
 // Lazy-load jsPDF (lumayan besar) hanya saat tombol unduh benar-benar diklik,
 // supaya pengunjung website biasa (yang tidak pernah buka /portal) tidak ikut
@@ -285,6 +286,7 @@ function Dashboard({ session }) {
                   )}
                 </div>
               )}
+              <ProjectProgress projectId={p.id} />
             </div>
           )
         })}

@@ -816,3 +816,51 @@ create policy "client_own_select" on public.acc_contracts for select to authenti
 create policy "client_own_sign" on public.acc_contracts for update to authenticated
   using (public.current_role_name() = 'client' and client_id in (select id from public.acc_clients where client_user_id = auth.uid()))
   with check (public.current_role_name() = 'client' and client_id in (select id from public.acc_clients where client_user_id = auth.uid()));
+
+-- ============================================================================
+-- PROGRES PENGERJAAN PER PROYEK (checklist tugas)
+-- ============================================================================
+-- Progres proyek (%) SELALU dihitung dari checklist ini (selesai/total),
+-- tidak ada field persentase terpisah yang diisi manual -- supaya angkanya
+-- konsisten dengan yang benar-benar dicentang staf. Ditampilkan juga di
+-- Portal Klien (read-only) untuk transparansi progres ke klien.
+--
+-- Diuji (lalu dihapus): Staff A update status tugas miliknya sendiri ->
+-- berhasil. Staff A coba update tugas milik Staff B -> ditolak RLS (0 baris
+-- berubah). Klien pemilik proyek -> melihat 2 tugas. Klien lain (bukan
+-- pemilik) -> melihat 0 tugas dan update ditolak total (tidak ada policy
+-- update untuk role client sama sekali).
+create table if not exists public.acc_project_tasks (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.acc_projects(id) on delete cascade,
+  title text not null,
+  assigned_staff_id uuid references public.acc_staff_members(id),
+  status text not null default 'todo' check (status in ('todo','in_progress','done')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.acc_project_tasks enable row level security;
+
+create policy "oas_select" on public.acc_project_tasks for select to authenticated
+  using (public.current_role_name() in ('owner','admin','staff'));
+create policy "viewer_select" on public.acc_project_tasks for select to authenticated
+  using (public.current_role_name() = 'viewer');
+create policy "oas_insert" on public.acc_project_tasks for insert to authenticated
+  with check (public.current_role_name() in ('owner','admin','staff'));
+create policy "oa_update" on public.acc_project_tasks for update to authenticated
+  using (public.current_role_name() in ('owner','admin'))
+  with check (public.current_role_name() in ('owner','admin'));
+create policy "staff_own_update" on public.acc_project_tasks for update to authenticated
+  using (public.current_role_name() = 'staff' and assigned_staff_id in (select id from public.acc_staff_members where profile_id = auth.uid()))
+  with check (public.current_role_name() = 'staff' and assigned_staff_id in (select id from public.acc_staff_members where profile_id = auth.uid()));
+create policy "oa_delete" on public.acc_project_tasks for delete to authenticated
+  using (public.current_role_name() in ('owner','admin'));
+create policy "client_own_select" on public.acc_project_tasks for select to authenticated
+  using (
+    public.current_role_name() = 'client'
+    and project_id in (
+      select p.id from public.acc_projects p
+      join public.acc_clients c on c.id = p.client_id
+      where c.client_user_id = auth.uid()
+    )
+  );
