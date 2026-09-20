@@ -470,3 +470,143 @@ alter table public.acc_invoices add column if not exists is_ppn_applicable boole
 
 -- FASE 5b: Audit Trail memakai tabel acc_audit_logs yang sudah ada sejak
 -- Fase 1 -- kini benar-benar dipakai dari frontend (lihat src/admin/accounting/auditLog.js).
+
+-- ============================================================================
+-- FASE 6a: RBAC PENUH (Owner/Admin/Staff/Viewer)
+-- ============================================================================
+-- PENTING -- dua bug kritis ditemukan & diperbaiki saat pengujian migrasi ini
+-- (disimulasikan via set_config('request.jwt.claims', ...) + SET ROLE
+-- authenticated, BUKAN diasumsikan benar tanpa uji):
+--  1) Policy lama "authenticated_full_access" pada tabel profiles belum
+--     ter-drop, sehingga siapa saja yang login bisa mengubah role dirinya
+--     sendiri jadi 'owner'. => harus di-drop eksplisit.
+--  2) Policy viewer_select awalnya ikut dipasang ke acc_invoices/acc_payments
+--     /acc_expenses (harusnya HANYA acc_clients/acc_projects/acc_digital_assets)
+--     -- Viewer sempat bisa baca data keuangan sensitif. => dicabut dari 3
+--     tabel finansial itu.
+--  3) Sub-query di policy "staff_own_select" (acc_commissions) ke
+--     acc_staff_members ikut kena RLS acc_staff_members itu sendiri --
+--     kalau Staff tidak boleh SELECT acc_staff_members, sub-query-nya selalu
+--     kosong dan Staff tidak pernah melihat komisi miliknya sendiri. =>
+--     acc_staff_members dibuka SELECT (bukan tulis) untuk staff & viewer.
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check check (role in ('owner','admin','staff','viewer','client'));
+
+alter table public.acc_staff_members add column if not exists profile_id uuid references public.profiles(id);
+
+create or replace function public.current_role_name()
+returns text language sql stable security definer set search_path = public as $$
+  select role from public.profiles where id = auth.uid();
+$$;
+revoke execute on function public.current_role_name() from public, anon;
+
+-- Fallback role signup baru diperbaiki bertahap -- lihat juga Fase 6b di
+-- bawah untuk versi FINAL fungsi ini (fallback 'client', bukan 'viewer').
+
+-- Tabel operasional: Owner/Admin/Staff kelola (staff tanpa hak hapus), Viewer
+-- hanya baca acc_clients/acc_projects/acc_digital_assets (BUKAN 3 tabel
+-- finansial ini -- itu bug yang sudah diperbaiki, lihat catatan di atas).
+-- Pola lengkap: kolom per tabel diberi 4 policy (oas_select/oas_insert/
+-- oas_update/oa_delete) + viewer_select HANYA untuk acc_clients/acc_projects/
+-- acc_digital_assets. Lihat riwayat migrasi Supabase untuk SQL persis yang
+-- dijalankan (akunting_phase6_rbac + 2 migrasi perbaikan sesudahnya).
+
+drop policy if exists "authenticated_full_access" on public.profiles;
+create policy "own_profile_select" on public.profiles for select to authenticated using (id = auth.uid());
+create policy "oa_manage_profiles" on public.profiles for all to authenticated
+  using (public.current_role_name() in ('owner','admin'))
+  with check (public.current_role_name() in ('owner','admin'));
+
+-- Restriksi tambahan: konten website (site_content) juga dibatasi ke
+-- Owner/Admin saja (sebelumnya "authenticated" generik, sekarang ada role
+-- Staff/Viewer akunting yang authenticated juga tapi TIDAK boleh ubah
+-- konten marketing site).
+drop policy if exists "Admin can update site content" on site_content;
+create policy "Admin can update site content" on site_content for update to authenticated
+  using (public.current_role_name() in ('owner','admin'))
+  with check (public.current_role_name() in ('owner','admin'));
+drop policy if exists "Admin can insert site content" on site_content;
+create policy "Admin can insert site content" on site_content for insert to authenticated
+  with check (public.current_role_name() in ('owner','admin'));
+
+-- Edge Function "invite-staff" (lihat supabase/functions/invite-staff) dipakai
+-- Owner/Admin untuk mengundang akun baru; role disisipkan lewat user_metadata
+-- supaya trigger handle_new_user tahu role yang benar (bukan fallback default).
+
+-- ============================================================================
+-- FASE 6b: PORTAL KLIEN (magic link, read-only, hanya data milik sendiri)
+-- ============================================================================
+-- Versi FINAL handle_new_user: fallback aman 'client' (BUKAN 'viewer') untuk
+-- signup tanpa metadata role -- portal klien pakai magic-link signup PUBLIK,
+-- kalau fallback-nya 'viewer' maka orang asing yang coba portal otomatis
+-- bisa lihat data operasional internal. 'client' tanpa client_user_id
+-- ter-link = tidak melihat data apa pun sampai berhasil di-claim.
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_role text;
+  v_name text;
+begin
+  v_role := new.raw_user_meta_data->>'role';
+  v_name := coalesce(new.raw_user_meta_data->>'name', new.email);
+  if v_role is null then
+    v_role := 'client';
+  end if;
+  insert into public.profiles (id, name, role) values (new.id, v_name, v_role) on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+alter table public.acc_clients add column if not exists client_user_id uuid references auth.users(id);
+create unique index if not exists acc_clients_client_user_id_key on public.acc_clients (client_user_id) where client_user_id is not null;
+
+-- Dipanggil sekali oleh frontend portal (supabase.rpc('claim_client_record'))
+-- tepat setelah login sukses. Hanya menghubungkan baris acc_clients yang
+-- emailnya sama persis dengan email akun yang login -- tidak bisa dipakai
+-- mengklaim data klien lain karena auth.uid() berasal dari token sesi yang
+-- valid, bukan input bebas. TERBUKTI lewat pengujian: percobaan klien A
+-- meng-update client_user_id milik klien B ditolak RLS (0 baris berubah),
+-- begitu juga percobaan mengubah nominal invoice klien B.
+create or replace function public.claim_client_record()
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_email text;
+begin
+  select email into v_email from auth.users where id = auth.uid();
+  if v_email is null then return; end if;
+  update public.acc_clients set client_user_id = auth.uid()
+  where lower(email) = lower(v_email) and client_user_id is null;
+end;
+$$;
+grant execute on function public.claim_client_record() to authenticated;
+
+-- RLS portal: role 'client' cuma boleh SELECT baris miliknya sendiri, tidak
+-- ada tulis sama sekali. Diuji dengan 2 klien simulasi (A & B) -- klien A
+-- hanya melihat proyek/invoice miliknya sendiri, tidak melihat data klien B
+-- sama sekali (bukan cuma disamarkan -- baris klien B benar-benar tidak
+-- muncul di hasil query).
+drop policy if exists "client_own_select" on public.acc_clients;
+create policy "client_own_select" on public.acc_clients for select to authenticated
+  using (public.current_role_name() = 'client' and client_user_id = auth.uid());
+
+drop policy if exists "client_own_select" on public.acc_projects;
+create policy "client_own_select" on public.acc_projects for select to authenticated
+  using (public.current_role_name() = 'client' and client_id in (select id from public.acc_clients where client_user_id = auth.uid()));
+
+drop policy if exists "client_own_select" on public.acc_digital_assets;
+create policy "client_own_select" on public.acc_digital_assets for select to authenticated
+  using (
+    public.current_role_name() = 'client'
+    and project_id in (select p.id from public.acc_projects p join public.acc_clients c on c.id = p.client_id where c.client_user_id = auth.uid())
+  );
+
+drop policy if exists "client_own_select" on public.acc_invoices;
+create policy "client_own_select" on public.acc_invoices for select to authenticated
+  using (public.current_role_name() = 'client' and client_id in (select id from public.acc_clients where client_user_id = auth.uid()));
+
+drop policy if exists "client_own_select" on public.acc_payments;
+create policy "client_own_select" on public.acc_payments for select to authenticated
+  using (
+    public.current_role_name() = 'client'
+    and invoice_id in (select i.id from public.acc_invoices i join public.acc_clients c on c.id = i.client_id where c.client_user_id = auth.uid())
+  );

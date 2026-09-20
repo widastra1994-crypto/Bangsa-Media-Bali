@@ -63,6 +63,9 @@ export default function Footer() {
                 {s.label}
               </a>
             ))}
+            <a href="/portal" className="hover:text-slate-300">
+              Portal Klien
+            </a>
             <a href="/admin" className="text-slate-600 hover:text-gold-soft">
               Admin
             </a>

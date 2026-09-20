@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import AdminApp from './admin/AdminApp.jsx'
+import PortalPage from './pages/PortalPage.jsx'
 import AboutPage from './pages/AboutPage.jsx'
 import PricingOverviewPage from './pages/PricingOverviewPage.jsx'
 import PricingPage from './pages/PricingPage.jsx'
@@ -29,6 +30,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/blog" element={<BlogListPage />} />
             <Route path="/blog/:slug" element={<BlogPostPage />} />
             <Route path="/admin" element={<AdminApp />} />
+            <Route path="/portal" element={<PortalPage />} />
           </Routes>
         </BrowserRouter>
       </LanguageProvider>
