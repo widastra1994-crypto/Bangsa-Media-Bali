@@ -1,5 +1,5 @@
 import { ArrowRight, Check, Code2, Database, Megaphone, Palette } from 'lucide-react'
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 
 const VARIANT_STYLE = {
   dev: { Icon: Code2, gradient: 'from-blue-700 to-cyan-400', glow: 'bg-blue-600/10 group-hover:bg-cyan-500/20', text: 'group-hover:text-cyan-300' },
@@ -9,7 +9,7 @@ const VARIANT_STYLE = {
 }
 
 export default function Services() {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { services } = content
 
   return (

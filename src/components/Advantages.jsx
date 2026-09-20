@@ -1,5 +1,5 @@
 import { Clock, Code2, Headphones, Sparkles } from 'lucide-react'
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 
 const ICONS = { 'code-2': Code2, clock: Clock, sparkles: Sparkles, headphones: Headphones }
 
@@ -11,7 +11,7 @@ const COLOR_STYLE = {
 }
 
 export default function Advantages() {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { advantages } = content
 
   return (

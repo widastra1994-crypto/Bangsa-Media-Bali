@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 import PricingCard from './PricingCard'
 import PricingCalculatorModal from './PricingCalculatorModal'
 
 export default function Pricing() {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { pricing } = content
   const [activeCategory, setActiveCategory] = useState(pricing.categories[0]?.slug)
   const [selectedTier, setSelectedTier] = useState(null)

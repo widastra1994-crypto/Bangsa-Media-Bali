@@ -24,13 +24,20 @@ export default function PortfolioEditor() {
         ...draft.items,
         {
           id: Date.now(),
+          slug: `proyek-${Date.now()}`,
           title: 'Proyek Baru',
           category: draft.categories[1] || 'Website',
           location: '',
+          client: '',
+          year: new Date().getFullYear().toString(),
           description: 'Deskripsi singkat proyek.',
+          challenge: '',
+          solution: '',
           tags: [],
           accent: 'blue',
           image: '',
+          gallery: [],
+          results: [],
           websiteUrl: '',
         },
       ],
@@ -131,6 +138,15 @@ export default function PortfolioEditor() {
             <Field label="Lokasi (contoh: Denpasar, Bali)">
               <TextInput value={item.location} onChange={(v) => updateItem(idx, 'location', v)} />
             </Field>
+            <Field label="Slug URL Halaman Detail">
+              <TextInput value={item.slug} onChange={(v) => updateItem(idx, 'slug', v)} placeholder="nama-proyek" />
+            </Field>
+            <Field label="Nama Klien (opsional)">
+              <TextInput value={item.client} onChange={(v) => updateItem(idx, 'client', v)} />
+            </Field>
+            <Field label="Tahun Pengerjaan">
+              <TextInput value={item.year} onChange={(v) => updateItem(idx, 'year', v)} placeholder="2026" />
+            </Field>
             <Field label="Tag Teknologi (pisahkan dengan koma)">
               <TextInput
                 value={(item.tags || []).join(', ')}
@@ -161,6 +177,40 @@ export default function PortfolioEditor() {
             ) : null}
             <Field label="Deskripsi" className="sm:col-span-2">
               <TextArea rows={2} value={item.description} onChange={(v) => updateItem(idx, 'description', v)} />
+            </Field>
+            <Field label="Tantangan Klien (untuk halaman detail)" className="sm:col-span-2">
+              <TextArea rows={2} value={item.challenge} onChange={(v) => updateItem(idx, 'challenge', v)} placeholder="Masalah yang dihadapi klien sebelum proyek ini." />
+            </Field>
+            <Field label="Solusi Kami (untuk halaman detail)" className="sm:col-span-2">
+              <TextArea rows={2} value={item.solution} onChange={(v) => updateItem(idx, 'solution', v)} placeholder="Bagaimana kami menyelesaikannya." />
+            </Field>
+            <Field label="Galeri Foto Tambahan (1 URL per baris)" className="sm:col-span-2">
+              <TextArea
+                rows={3}
+                value={(item.gallery || []).join('\n')}
+                onChange={(v) => updateItem(idx, 'gallery', v.split('\n').map((s) => s.trim()).filter(Boolean))}
+                placeholder={'https://...foto1.jpg\nhttps://...foto2.jpg'}
+              />
+            </Field>
+            <Field label="Hasil / Pencapaian (format: Label = Nilai, 1 per baris)" className="sm:col-span-2">
+              <TextArea
+                rows={3}
+                value={(item.results || []).map((r) => `${r.label} = ${r.value}`).join('\n')}
+                onChange={(v) =>
+                  updateItem(
+                    idx,
+                    'results',
+                    v
+                      .split('\n')
+                      .map((line) => {
+                        const [label, ...rest] = line.split('=')
+                        return { label: (label || '').trim(), value: rest.join('=').trim() }
+                      })
+                      .filter((r) => r.label && r.value),
+                  )
+                }
+                placeholder={'Kenaikan Penjualan = 140%\nWaktu Pengerjaan = 5 Minggu'}
+              />
             </Field>
           </ArrayCard>
         ))}

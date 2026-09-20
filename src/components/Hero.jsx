@@ -1,10 +1,10 @@
 import { Calculator, Play } from 'lucide-react'
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 import HeroMascot from './HeroMascot'
 import CircuitWaves from './CircuitWaves'
 
 export default function Hero() {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { hero } = content
 
   return (

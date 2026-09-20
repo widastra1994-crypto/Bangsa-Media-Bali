@@ -39,10 +39,70 @@ create view booked_slots
 
 grant select on booked_slots to anon;
 
--- Untuk melihat & mengelola daftar leads (nama, telepon, dll), gunakan
--- Table Editor di Supabase Dashboard (menu kiri > Table Editor > consultation_leads).
--- Di sana Anda bisa lihat, cari, filter, urutkan, dan ubah kolom `status`
--- (mis. "baru" -> "dihubungi" -> "selesai") tanpa perlu kode tambahan.
+-- Admin (login lewat Supabase Auth) boleh membaca & mengubah status leads,
+-- dipakai oleh Dashboard Analitik di /admin. Selain lewat dashboard bawaan
+-- Supabase (Table Editor), sekarang bisa juga langsung dari CMS admin.
+drop policy if exists "Admin can read leads" on consultation_leads;
+create policy "Admin can read leads"
+  on consultation_leads for select
+  to authenticated
+  using (true);
+
+drop policy if exists "Admin can update leads" on consultation_leads;
+create policy "Admin can update leads"
+  on consultation_leads for update
+  to authenticated
+  using (true)
+  with check (true);
+
+-- ============================================================================
+-- NOTIFIKASI LEAD BARU KE TELEGRAM (opsional)
+-- ============================================================================
+-- Setiap ada lead baru, trigger ini otomatis memanggil Edge Function
+-- "notify-lead" (lihat supabase/functions/notify-lead/index.ts) yang meneruskan
+-- notifikasi ke Telegram tim. Anon key di bawah ini PUBLIK (sama dengan yang
+-- dipakai frontend di .env), bukan rahasia -- keamanan sesungguhnya ada di
+-- RLS di atas dan di secret TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID yang disimpan
+-- terpisah sebagai Edge Function secret (BUKAN di database ini).
+--
+-- Aktivasi: buat bot via @BotFather di Telegram (dapat TELEGRAM_BOT_TOKEN),
+-- lalu isi TELEGRAM_BOT_TOKEN & TELEGRAM_CHAT_ID di Dashboard Supabase >
+-- Edge Functions > notify-lead > Secrets. Selama secret belum diisi, function
+-- ini diam saja (tidak error, tidak mengganggu penyimpanan lead).
+create extension if not exists pg_net with schema extensions;
+
+create or replace function public.notify_new_lead()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform net.http_post(
+    url := 'https://ekzkxgpksqoyopzvaxsx.supabase.co/functions/v1/notify-lead',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer sb_publishable_Zl9V7bkJkh9Tb-Bmt65wPw_fnYvmbYQ'
+    ),
+    body := jsonb_build_object('record', to_jsonb(new))
+  );
+  return new;
+end;
+$$;
+
+-- Trigger tetap otomatis jalan tanpa perlu grant EXECUTE eksplisit; baris di
+-- bawah ini hanya menutup celah supaya fungsinya tidak bisa dipanggil manual
+-- lewat endpoint RPC publik (/rest/v1/rpc/notify_new_lead).
+revoke execute on function public.notify_new_lead() from public, anon, authenticated;
+
+drop trigger if exists on_lead_insert_notify on consultation_leads;
+create trigger on_lead_insert_notify
+  after insert on consultation_leads
+  for each row execute function public.notify_new_lead();
+
+-- Untuk melihat & mengelola daftar leads (nama, telepon, dll), selain lewat
+-- Dashboard Analitik di /admin, Anda juga bisa pakai Table Editor di Supabase
+-- Dashboard (menu kiri > Table Editor > consultation_leads).
 
 -- ============================================================================
 -- KONTEN WEBSITE (menggantikan localStorage supaya SEMUA pengunjung melihat

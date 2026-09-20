@@ -38,7 +38,7 @@ function mergeArrays(baseArr, overrideArr) {
 // Merge rekursif: field baru yang ditambahkan ke defaultContent (section, sub-objek,
 // atau field baru di dalam item array ber-id) tetap muncul walau data tersimpan
 // pengguna belum punya field itu, tanpa menghapus perubahan/penambahan milik pengguna.
-function deepMerge(base, override) {
+export function deepMerge(base, override) {
   if (Array.isArray(base) || Array.isArray(override)) {
     return mergeArrays(Array.isArray(base) ? base : [], override)
   }

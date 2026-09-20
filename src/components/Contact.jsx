@@ -1,8 +1,8 @@
 import { Clock, Mail, MapPin, Phone } from 'lucide-react'
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 
 export default function Contact() {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { contact } = content
   const mapsEmbedSrc = `https://www.google.com/maps?q=${encodeURIComponent(contact.mapsQuery)}&output=embed`
   const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.mapsQuery)}`

@@ -1,8 +1,10 @@
 import { Check } from 'lucide-react'
+import { useLanguage } from '../context/LanguageContext'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
 
 export default function PricingCard({ tier, onSelect }) {
+  const { lang } = useLanguage()
   const discount = tier.priceOriginal > tier.price ? Math.round(100 - (tier.price / tier.priceOriginal) * 100) : 0
 
   return (
@@ -31,7 +33,7 @@ export default function PricingCard({ tier, onSelect }) {
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500 line-through">{idr(tier.priceOriginal)}</span>
             <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400">
-              Hemat {discount}%
+              {lang === 'en' ? 'Save' : 'Hemat'} {discount}%
             </span>
           </div>
         )}

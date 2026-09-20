@@ -1,0 +1,335 @@
+// Terjemahan bahasa Inggris untuk konten inti (chrome UI + section utama).
+// Ini adalah OVERRIDE PARSIAL yang di-deep-merge di atas konten CMS (Bahasa
+// Indonesia) saat pengunjung memilih mode EN — bukan pohon konten terpisah.
+// Field yang TIDAK didaftarkan di sini (mis. isi artikel blog, narasi studi
+// kasus portofolio, baris detail tabel perbandingan) akan tetap tampil dalam
+// Bahasa Indonesia sampai ditambahkan terjemahannya di sini.
+export const contentEn = {
+  nav: {
+    menu: [
+      { id: 'beranda', label: 'Home' },
+      { id: 'layanan', label: 'Services' },
+      { id: 'paket', label: 'Pricing' },
+      { id: 'kalkulator', label: 'Cost Estimator' },
+      { id: 'portofolio', label: 'Portfolio' },
+      { id: 'testimoni', label: 'Testimonials' },
+      { id: 'blog', label: 'Blog' },
+      { id: 'keunggulan', label: 'Why Us' },
+      { id: 'tentang', label: 'About' },
+      { id: 'kontak', label: 'Contact' },
+    ],
+    ctaLabel: 'Get a Free Consultation',
+  },
+  hero: {
+    eyebrow: 'Bali-Spirited Digital Agency',
+    headline: 'Bring Your Digital Vision to Life with Rooted Innovation',
+    description:
+      'Bangsa Media Bali blends modern technology with Balinese local wisdom to build websites, business systems, and digital strategies that help your brand thrive in the digital era.',
+    ctaPrimary: 'Get a Free Consultation',
+    ctaSecondary: 'View Our Work',
+    badges: [
+      { label: 'Projects Completed', value: '120+' },
+      { label: 'Happy Clients', value: '95%' },
+      { label: 'Years of Experience', value: '8+' },
+      { label: 'Professional Team', value: '25+' },
+    ],
+  },
+  services: {
+    eyebrow: 'Core Services',
+    title: 'Complete Digital Solutions for Your Business',
+    description:
+      'From app development to digital marketing strategy, our team is ready to bring your business technology needs to life.',
+    ctaLabel: 'Calculate Your Estimate',
+    items: [
+      {
+        id: 'web',
+        title: 'Website & Web App Development',
+        description:
+          'High-converting landing pages to custom web apps with fast performance, modern design, and solid SEO.',
+        features: ['High Loading Speed', 'Responsive on Every Device', 'Payment Gateway & API Integration'],
+      },
+      {
+        id: 'erp',
+        title: 'System Integration, ERP & POS',
+        description:
+          'Automate business workflows, inventory management, and multi-outlet point-of-sale for operational efficiency.',
+        features: ['Scalable & Secure Architecture', 'Multi-Role Access Control', 'Real-time Automated Reporting'],
+      },
+      {
+        id: 'ads',
+        title: 'Strategic Ads (Meta, Google, TikTok Ads)',
+        description: 'Measurable digital ad campaign strategy for customer acquisition and maximum results.',
+        features: ['ROAS & Targeting Optimization', 'Pixel & Conversion Tracking', 'Copywriting & Creative Ads'],
+      },
+      {
+        id: 'design',
+        title: 'UI/UX Design & Digital Branding',
+        description:
+          'Intuitive interface design and a strong, consistent, characterful digital brand identity.',
+        features: ['User Research & User Flow', 'High-Fidelity Figma Design', 'Complete Brand Guideline'],
+      },
+    ],
+  },
+  pricing: {
+    eyebrow: 'Pricing Plans',
+    title: 'Plans & Pricing',
+    description: 'Choose a ready-made package that fits your needs, or use the calculator below for a custom estimate.',
+    trustBadges: ['Free Consultation Before Starting', 'Revisions Included per Package', 'Transparent Pricing, No Hidden Fees'],
+    detailCtaLabel: 'View Full Details & Comparison',
+    categories: [
+      {
+        id: 'website',
+        label: 'Website',
+        intro: 'Every package already includes:',
+        includedBadges: ['Free Domain for 1 Year', 'Free SSL', 'Fast Hosting', 'Technical Support'],
+        tiers: [
+          {
+            id: 'website-starter',
+            name: 'Starter',
+            badge: 'Save 30%',
+            description: 'Perfect for small businesses or individuals just starting their digital presence.',
+            ctaLabel: 'Choose Plan',
+            features: ['5 Website Pages', 'Premium Template Design', 'Responsive on All Devices', 'Domain & Hosting for 1 Year', 'Free SSL', '1x Design Revision'],
+          },
+          {
+            id: 'website-business',
+            name: 'Business',
+            badge: 'Most Popular',
+            description: 'For growing businesses that need a professional, easy-to-manage website.',
+            ctaLabel: 'Choose Plan',
+            features: ['10 Website Pages', 'Custom UI/UX Design', 'CMS - Manage Your Own Content', 'Basic On-Page SEO', 'Domain & Hosting for 1 Year', '3x Design Revisions', 'WhatsApp & Contact Form Integration'],
+          },
+          {
+            id: 'website-enterprise',
+            name: 'Enterprise',
+            badge: 'Complete Solution',
+            description: 'Custom web app with system integrations for large-scale needs.',
+            ctaLabel: 'Choose Plan',
+            features: ['Unlimited Pages', 'Custom Web App (React/Next.js)', 'API & Database Integration', 'Advanced SEO & High Performance', 'Domain & Hosting for 1 Year', 'Unlimited Revisions (30 Days)', 'Dedicated Project Manager'],
+          },
+        ],
+      },
+      {
+        id: 'sistem',
+        label: 'Systems & ERP',
+        intro: 'Every package already includes:',
+        includedBadges: ['Usage Training', 'Bug Warranty', 'Server Hosting for 1 Year', 'Routine Data Backup'],
+        tiers: [
+          {
+            id: 'sistem-starter',
+            name: 'Starter',
+            badge: 'Save 25%',
+            description: 'A simple POS system for single-outlet businesses.',
+            ctaLabel: 'Choose Plan',
+            features: ['1-Outlet POS System', 'Basic Inventory Management', 'Daily Sales Reports', 'Up to 3 Users/Cashiers', 'Usage Training', '30-Day Bug Warranty'],
+          },
+          {
+            id: 'sistem-business',
+            name: 'Business',
+            badge: 'Most Popular',
+            description: 'Multi-outlet system integration with consolidated reporting.',
+            ctaLabel: 'Choose Plan',
+            features: ['Multi-Outlet POS System', 'Inventory & Supplier Management', 'Real-time Consolidated Reports', 'Up to 10 Users/Cashiers', 'Payment Gateway Integration', 'Training & Documentation', '60-Day Bug Warranty'],
+          },
+          {
+            id: 'sistem-enterprise',
+            name: 'Enterprise',
+            badge: 'Custom ERP',
+            description: 'Fully integrated custom ERP for company-scale operations.',
+            ctaLabel: 'Choose Plan',
+            features: ['Custom ERP Matching Your SOP', 'Multi-Branch & Warehouse Integration', 'Analytics & BI Dashboard', 'Unlimited Users + Role Access', 'Third-Party API Integration', 'Team Training & Full Documentation', '90-Day Bug Warranty + Maintenance'],
+          },
+        ],
+      },
+      {
+        id: 'desain',
+        label: 'Design',
+        intro: 'Every package already includes:',
+        includedBadges: ['Complete Source Files', 'Revisions per Package', 'Concept Consultation'],
+        tiers: [
+          {
+            id: 'desain-starter',
+            name: 'Starter',
+            badge: 'Save 30%',
+            description: 'Logo and basic visual identity for a new brand.',
+            ctaLabel: 'Choose Plan',
+            features: ['Logo Design (3 Concepts)', 'Basic Brand Guideline', 'Business Card & Letterhead', 'Source Files (AI/PNG/PDF)', '2x Revisions'],
+          },
+          {
+            id: 'desain-business',
+            name: 'Business',
+            badge: 'Most Popular',
+            description: 'App/website UI/UX design plus a complete brand identity.',
+            ctaLabel: 'Choose Plan',
+            features: ['Web/App UI/UX Design (up to 15 Screens)', 'Complete Brand Guideline', 'Marketing Kit Design (Social Media, Banners)', 'Interactive Prototype (Figma)', 'Complete Source Files', '4x Revisions'],
+          },
+          {
+            id: 'desain-enterprise',
+            name: 'Enterprise',
+            badge: 'Design System',
+            description: 'A comprehensive design system and rebranding for company scale.',
+            ctaLabel: 'Choose Plan',
+            features: ['Complete Design System (Components & Tokens)', 'Full Rebranding', 'Unlimited UI/UX Screens', 'User Research & Usability Testing', 'Complete Source Files & Documentation', 'Unlimited Revisions (30 Days)'],
+          },
+        ],
+      },
+      {
+        id: 'marketing',
+        label: 'Digital Marketing',
+        intro: 'Every package already includes:',
+        includedBadges: ['Periodic Performance Reports', 'Target Audience Research', 'Strategy Consultation'],
+        tiers: [
+          {
+            id: 'marketing-starter',
+            name: 'Starter',
+            badge: 'Save 25%',
+            description: 'Manage ads on 1 platform to start reaching new customers.',
+            ctaLabel: 'Choose Plan',
+            features: ['1 Ads Platform (Meta/Google/TikTok)', 'Target Audience Research', 'Ad Copywriting', 'Monthly Performance Report', 'Ad Budget Charged Separately'],
+          },
+          {
+            id: 'marketing-business',
+            name: 'Business',
+            badge: 'Most Popular',
+            description: 'Multi-platform strategy with ongoing content and optimization.',
+            ctaLabel: 'Choose Plan',
+            features: ['Up to 3 Ads Platforms', 'Advanced Research & Targeting', 'Copywriting + Ad Creative Design', 'A/B Ad Testing', 'Weekly Performance Report', 'Continuous Optimization'],
+          },
+          {
+            id: 'marketing-enterprise',
+            name: 'Enterprise',
+            badge: 'Full Funnel',
+            description: 'Full-funnel strategy with a dedicated team for maximum results.',
+            ctaLabel: 'Choose Plan',
+            features: ['All Ads Platforms (Meta/Google/TikTok/LinkedIn)', 'Full-Funnel & Retargeting Strategy', 'Photo/Video Content Production', 'Dedicated Digital Strategist', 'Real-time Reports & In-depth Analytics', 'Weekly Optimization & Consultation'],
+          },
+        ],
+      },
+    ],
+  },
+  calculator: {
+    eyebrow: 'Interactive Feature',
+    title: 'Project Cost & Scope Estimator',
+    description:
+      'Select your services and project scale to get an instant cost estimate, then continue the consultation via WhatsApp.',
+    services: [
+      { id: 'web', label: 'Website & Web App' },
+      { id: 'erp', label: 'System Integration / ERP & POS' },
+      { id: 'ads', label: 'Strategic Ads' },
+      { id: 'design', label: 'UI/UX & Branding' },
+    ],
+    scales: [
+      { id: 'kecil', label: 'Small Scale', description: 'SME / Startup' },
+      { id: 'menengah', label: 'Medium Scale', description: 'Growing business' },
+      { id: 'besar', label: 'Large Scale', description: 'Enterprise / Corporate' },
+    ],
+    turnaround: '14 - 30 Days Delivery',
+    perks: [
+      'Free 30-Day Bug Warranty & Maintenance',
+      'System Usage Training (SOP Training)',
+      'Source Code Access & Full Asset Ownership',
+    ],
+    step1Label: 'Select the Service Modules You Need',
+    step2Label: 'Project Scale / Complexity',
+    summaryLabel: 'Estimate Summary',
+    investmentLabel: 'Estimated Investment Value',
+    disclaimer: '*Initial estimate. Final cost adjusts to the agreed technical specification details.',
+    emptyStateLabel: 'Select at Least 1 Service',
+    waButtonLabel: 'Claim Estimate via WhatsApp',
+    trustBadge: 'Data Confidentiality Guaranteed (NDA Ready)',
+    step3Label: 'Your Details & Consultation Schedule',
+    step3RequiredNote: '*Required so our team can contact you.',
+    contactFields: {
+      name: 'Full Name',
+      phone: 'Phone/WhatsApp Number',
+      email: 'Email',
+      businessName: 'Business Name',
+      businessType: 'Business Type',
+      address: 'Address',
+      consultDate: 'Consultation Date',
+      consultTime: 'Consultation Time',
+    },
+    businessTypes: ['SME', 'Retail / Store', 'Food & Beverage', 'Services', 'Manufacturing', 'Digital Startup', 'Corporate', 'Other'],
+  },
+  portfolio: {
+    eyebrow: 'Portfolio & Case Studies',
+    title: 'Work We Have Delivered',
+    description: 'A selection of projects our clients across various industries have trusted us with.',
+    categories: ['All', 'Website', 'ERP/POS', 'Ads', 'UI/UX'],
+  },
+  testimonials: {
+    eyebrow: 'Client Testimonials',
+    title: 'What They Say About Working With Us',
+    description: 'Client satisfaction is our top priority — here are real experiences from some of our business partners.',
+    items: [
+      { id: 'testi-1', role: 'Owner', text: 'The e-commerce website they built really boosted our sales. The team was responsive and the result exceeded our expectations.' },
+      { id: 'testi-2', role: 'General Manager', text: 'The multi-outlet POS system from Bangsa Media Bali completely transformed how we manage inventory and reporting. Highly recommended.' },
+      { id: 'testi-3', role: 'Marketing Director', text: 'Their ad strategy significantly increased our villa occupancy. The performance reporting is also very transparent.' },
+    ],
+  },
+  blog: {
+    eyebrow: 'Blog & Insights',
+    title: 'Digital Insights From Our Team',
+    description: 'Tips, case studies, and the latest technology trends to help your business grow digitally.',
+    viewAllLabel: 'View All Articles',
+    backLabel: 'Back to Blog',
+    readMoreLabel: 'Read More',
+  },
+  advantages: {
+    eyebrow: 'Our Key Strengths',
+    title: 'Why Partner with Bangsa Media Bali?',
+    description: 'We combine modern software engineering discipline with the precision and integrity of Balinese craftsmanship.',
+    items: [
+      { id: 'clean-code', title: 'Clean & Scalable Code', description: 'A modular architecture that is easy to develop further without having to rebuild from scratch.' },
+      { id: 'ontime', title: 'On-Time & Guaranteed', description: 'Measured timelines with weekly sprint demos, plus a functionality warranty.' },
+      { id: 'aesthetic', title: 'Artistic Aesthetic Touch', description: 'Exclusively crafted UI/UX, never a generic template, so your brand looks authoritative.' },
+      { id: 'support', title: 'Responsive Support', description: 'A dedicated technical team ready to help with fast response via a dedicated project channel.' },
+    ],
+  },
+  about: {
+    eyebrow: 'About Us',
+    title: 'Tradition as the Root, Innovation as the Wings',
+    paragraphs: [
+      'Bangsa Media Bali is an IT agency that helps SMEs and large enterprises alike undergo digital transformation without losing their cultural identity.',
+      'We believe the best technology grows from local cultural roots — blending modern software engineering precision with the philosophy of mutual cooperation and Balinese artistic craftsmanship.',
+    ],
+    stats: [
+      { label: 'Active Clients', value: '80+' },
+      { label: 'Expert Team', value: '25+' },
+      { label: 'Cities Reached', value: '15+' },
+      { label: 'Satisfaction Rating', value: '4.9/5' },
+    ],
+  },
+  contact: {
+    eyebrow: 'Contact',
+    title: "Let's Build Your Digital Project",
+    description: 'Our team is ready to help discuss your business digital needs.',
+    hours: 'Monday - Friday, 09:00 - 18:00 (Bali Time)',
+    labels: {
+      address: 'Address',
+      phone: 'Phone',
+      email: 'Email',
+      hours: 'Business Hours',
+      mapsLink: 'Open in Google Maps',
+    },
+  },
+  footer: {
+    tagline: 'Rooted Innovation for the Digital Future of Your Business.',
+    copyText: 'Bangsa Media Bali. All rights reserved.',
+    servicesHeading: 'Core Services',
+    philosophyHeading: 'Our Philosophy',
+    philosophyText:
+      'We believe the best technology grows from local cultural roots — blending modern software engineering precision with the philosophy of mutual cooperation and Balinese artistic craftsmanship.',
+  },
+  assistant: {
+    subtitle: 'Bangsa Media Bali Digital Assistant',
+    greeting: 'Hello! Are you planning a website, internal system, or ad campaign you would like to ask about today?',
+    inputPlaceholder: 'Type your question...',
+    defaultReply: "Great choice! We're ready to help make that happen. Our team will prepare a proposal and a short discussion session.",
+    quickQuestions: [
+      { id: 'waktu', label: '⏱️ Delivery Time?', text: 'How long does it take to build a website?' },
+      { id: 'pos', label: '💻 POS & ERP System?', text: 'Can you build a multi-branch POS system?' },
+      { id: 'wa', label: '📲 Chat Team on WA', text: 'I want to contact the technical team via WhatsApp' },
+    ],
+  },
+}

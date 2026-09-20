@@ -9,18 +9,24 @@ import ServicesEditor from './editors/ServicesEditor'
 import PricingEditor from './editors/PricingEditor'
 import CalculatorEditor from './editors/CalculatorEditor'
 import PortfolioEditor from './editors/PortfolioEditor'
+import TestimonialsEditor from './editors/TestimonialsEditor'
+import BlogEditor from './editors/BlogEditor'
 import AdvantagesEditor from './editors/AdvantagesEditor'
 import AboutEditor from './editors/AboutEditor'
 import ContactFooterEditor from './editors/ContactFooterEditor'
 import AssistantEditor from './editors/AssistantEditor'
+import AnalyticsDashboard from './editors/AnalyticsDashboard'
 
 const TABS = [
+  { id: 'analytics', label: 'Dashboard Analitik', Component: AnalyticsDashboard },
   { id: 'brand', label: 'Brand & Navigasi', Component: BrandNavEditor },
   { id: 'hero', label: 'Hero', Component: HeroEditor },
   { id: 'services', label: 'Layanan', Component: ServicesEditor },
   { id: 'pricing', label: 'Paket Harga', Component: PricingEditor },
   { id: 'calculator', label: 'Kalkulator', Component: CalculatorEditor },
   { id: 'portfolio', label: 'Portofolio', Component: PortfolioEditor },
+  { id: 'testimonials', label: 'Testimoni', Component: TestimonialsEditor },
+  { id: 'blog', label: 'Blog', Component: BlogEditor },
   { id: 'advantages', label: 'Keunggulan', Component: AdvantagesEditor },
   { id: 'about', label: 'Tentang', Component: AboutEditor },
   { id: 'contact', label: 'Kontak & Footer', Component: ContactFooterEditor },
@@ -33,7 +39,7 @@ export default function AdminApp() {
   // reaktif sendiri terhadap login/logout, jadi status efektifnya dipandu dari sini
   // sampai sessionAuthed dari hook menyusul (selalu terjadi pada mode Supabase).
   const [localOverride, setLocalOverride] = useState(null)
-  const [activeTab, setActiveTab] = useState('brand')
+  const [activeTab, setActiveTab] = useState('analytics')
 
   useEffect(() => {
     document.title = 'Admin CMS — Bangsa Media Bali'

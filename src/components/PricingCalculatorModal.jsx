@@ -1,9 +1,9 @@
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 import Modal from './Modal'
 import CalculatorPanel from './CalculatorPanel'
 
 export default function PricingCalculatorModal({ tier, category, onClose }) {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { calculator } = content
 
   return (

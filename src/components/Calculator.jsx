@@ -1,8 +1,8 @@
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 import CalculatorPanel from './CalculatorPanel'
 
 export default function Calculator() {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { calculator } = content
 
   return (

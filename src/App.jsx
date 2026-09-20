@@ -4,6 +4,8 @@ import Services from './components/Services'
 import Pricing from './components/Pricing'
 import Calculator from './components/Calculator'
 import Portfolio from './components/Portfolio'
+import Testimonials from './components/Testimonials'
+import Blog from './components/Blog'
 import Advantages from './components/Advantages'
 import About from './components/About'
 import Contact from './components/Contact'
@@ -22,6 +24,8 @@ function App() {
         <Pricing />
         <Calculator />
         <Portfolio />
+        <Testimonials />
+        <Blog />
         <Advantages />
         <About />
         <Contact />

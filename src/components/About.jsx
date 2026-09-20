@@ -1,8 +1,8 @@
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 import MascotIcon from './MascotIcon'
 
 export default function About() {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { about } = content
 
   return (

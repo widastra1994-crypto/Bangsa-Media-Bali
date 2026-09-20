@@ -1,10 +1,46 @@
 import { useEffect, useState } from 'react'
-import { Menu, Sparkles, X } from 'lucide-react'
-import { useContent } from '../context/ContentContext'
+import { Link } from 'react-router-dom'
+import { Languages, Menu, Sparkles, X } from 'lucide-react'
+import { useDisplayContent, useLanguage } from '../context/LanguageContext'
 import logoFull from '../assets/logo-full.png'
 
+function NavLink({ item, onClick, className }) {
+  if (item.href.startsWith('/')) {
+    return (
+      <Link to={item.href} onClick={onClick} className={className}>
+        {item.id === 'kalkulator' && <span className="h-2 w-2 animate-ping rounded-full bg-cyan-royal" />}
+        {item.label}
+      </Link>
+    )
+  }
+  return (
+    <a href={item.href} onClick={onClick} className={className}>
+      {item.id === 'kalkulator' && <span className="h-2 w-2 animate-ping rounded-full bg-cyan-royal" />}
+      {item.label}
+    </a>
+  )
+}
+
+function LangToggle({ compact }) {
+  const { lang, toggleLang } = useLanguage()
+  return (
+    <button
+      type="button"
+      onClick={toggleLang}
+      aria-label="Ganti bahasa / Switch language"
+      title="Bahasa Indonesia / English"
+      className={`flex items-center gap-1.5 rounded-full border border-white/15 text-xs font-semibold text-slate-300 transition-colors hover:border-cyan-royal hover:text-cyan-royal ${
+        compact ? 'w-full justify-center px-4 py-2.5' : 'px-3 py-1.5'
+      }`}
+    >
+      <Languages size={14} />
+      {lang === 'id' ? 'ID / EN' : 'EN / ID'}
+    </button>
+  )
+}
+
 export default function Navbar() {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { nav } = content
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -29,20 +65,20 @@ export default function Navbar() {
         <ul className="hidden items-center gap-7 lg:flex">
           {nav.menu.map((item) => (
             <li key={item.id}>
-              <a
-                href={item.href}
+              <NavLink
+                item={item}
                 className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-slate-300 transition-colors hover:text-cyan-royal"
-              >
-                {item.id === 'kalkulator' && <span className="h-2 w-2 animate-ping rounded-full bg-cyan-royal" />}
-                {item.label}
-              </a>
+              />
             </li>
           ))}
         </ul>
 
-        <a href="#kontak" className="btn-primary hidden !px-5 !py-2.5 text-xs lg:inline-flex">
-          <Sparkles size={14} className="text-gold-soft" /> {nav.ctaLabel}
-        </a>
+        <div className="hidden items-center gap-3 lg:flex">
+          <LangToggle />
+          <a href="#kontak" className="btn-primary !px-5 !py-2.5 text-xs">
+            <Sparkles size={14} className="text-gold-soft" /> {nav.ctaLabel}
+          </a>
+        </div>
 
         <button
           type="button"
@@ -59,15 +95,12 @@ export default function Navbar() {
           <ul className="flex flex-col gap-4">
             {nav.menu.map((item) => (
               <li key={item.id}>
-                <a
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="block text-sm font-medium text-slate-200 hover:text-gold-soft"
-                >
-                  {item.label}
-                </a>
+                <NavLink item={item} onClick={() => setOpen(false)} className="block text-sm font-medium text-slate-200 hover:text-gold-soft" />
               </li>
             ))}
+            <li>
+              <LangToggle compact />
+            </li>
             <li>
               <a href="#kontak" onClick={() => setOpen(false)} className="btn-primary w-full">
                 {nav.ctaLabel}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, ShieldCheck } from 'lucide-react'
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent, useLanguage } from '../context/LanguageContext'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import FloatingAssistant from '../components/FloatingAssistant'
@@ -11,7 +11,9 @@ import PricingCalculatorModal from '../components/PricingCalculatorModal'
 
 export default function PricingPage() {
   const { slug } = useParams()
-  const { content } = useContent()
+  const { content } = useDisplayContent()
+  const { lang } = useLanguage()
+  const t = (id, en) => (lang === 'en' ? en : id)
   const { pricing } = content
   const category = pricing.categories.find((c) => c.slug === slug)
   const [selectedTier, setSelectedTier] = useState(null)
@@ -21,9 +23,9 @@ export default function PricingPage() {
       <div className="min-h-screen bg-nusatech-gradient text-slate-100">
         <Navbar />
         <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">
-          <p className="text-2xl font-bold text-white">Paket tidak ditemukan</p>
+          <p className="text-2xl font-bold text-white">{t('Paket tidak ditemukan', 'Package not found')}</p>
           <Link to="/#paket" className="btn-primary">
-            <ArrowLeft size={16} /> Kembali ke Beranda
+            <ArrowLeft size={16} /> {t('Kembali ke Beranda', 'Back to Home')}
           </Link>
         </div>
       </div>
@@ -36,12 +38,12 @@ export default function PricingPage() {
       <main className="pb-20 pt-32 lg:pb-28 lg:pt-40">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <Link to="/#paket" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-cyan-royal">
-            <ArrowLeft size={16} /> Kembali ke Semua Paket
+            <ArrowLeft size={16} /> {t('Kembali ke Semua Paket', 'Back to All Plans')}
           </Link>
 
           <div className="mx-auto max-w-2xl text-center">
             <span className="section-eyebrow">{pricing.eyebrow}</span>
-            <h1 className="mt-5 text-3xl font-bold text-white sm:text-4xl">Paket {category.label}</h1>
+            <h1 className="mt-5 text-3xl font-bold text-white sm:text-4xl">{t(`Paket ${category.label}`, `${category.label} Plan`)}</h1>
             <p className="mt-4 text-slate-300">{pricing.description}</p>
           </div>
 
@@ -84,7 +86,7 @@ export default function PricingPage() {
           </div>
 
           <div className="mt-16">
-            <h2 className="mb-6 text-center text-2xl font-bold text-white">Bandingkan Paket {category.label}</h2>
+            <h2 className="mb-6 text-center text-2xl font-bold text-white">{t(`Bandingkan Paket ${category.label}`, `Compare ${category.label} Plans`)}</h2>
             <PricingComparisonTable category={category} />
           </div>
         </div>

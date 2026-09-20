@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check, CheckCircle2, MessageSquare, Shield } from 'lucide-react'
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
@@ -48,7 +48,7 @@ function Stepper({ completedSteps }) {
 }
 
 export default function CalculatorPanel({ defaultServices, defaultScale, contextNote }) {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { calculator } = content
   const [selectedServices, setSelectedServices] = useState(
     defaultServices?.length ? defaultServices : [calculator.services[0]?.id].filter(Boolean),

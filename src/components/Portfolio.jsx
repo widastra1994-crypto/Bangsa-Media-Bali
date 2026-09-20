@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Globe } from 'lucide-react'
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 
 const BANNER_GRADIENT = {
   Website: 'from-blue-900 via-indigo-950 to-slate-900',
@@ -17,12 +18,19 @@ const TAG_BADGE = {
 }
 
 export default function Portfolio() {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { portfolio } = content
-  const [activeCategory, setActiveCategory] = useState('Semua')
+  const allLabel = portfolio.categories[0]
+  const [activeCategory, setActiveCategory] = useState(allLabel)
+
+  // Sinkronkan ulang saat label "Semua/All" berganti karena toggle bahasa,
+  // supaya filter tidak diam-diam macet di label bahasa yang sudah tidak ada.
+  useEffect(() => {
+    setActiveCategory(allLabel)
+  }, [allLabel])
 
   const filtered =
-    activeCategory === 'Semua' ? portfolio.items : portfolio.items.filter((item) => item.category === activeCategory)
+    activeCategory === allLabel ? portfolio.items : portfolio.items.filter((item) => item.category === activeCategory)
 
   return (
     <section id="portofolio" className="relative border-t border-blue-900/40 py-20 lg:py-28">
@@ -52,8 +60,9 @@ export default function Portfolio() {
 
         <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
-            <div
+            <Link
               key={item.id}
+              to={`/portofolio/${item.slug || item.id}`}
               className="group overflow-hidden rounded-2xl border border-slate-800 bg-navy-900/50 transition-all duration-300 hover:-translate-y-1.5 hover:border-cyan-400/60"
             >
               <div className={`relative flex h-44 flex-col justify-between overflow-hidden bg-gradient-to-br p-6 ${BANNER_GRADIENT[item.category] || BANNER_GRADIENT.Website}`}>
@@ -77,16 +86,19 @@ export default function Portfolio() {
                 <div className="relative z-10 text-lg font-bold text-white transition-colors group-hover:text-cyan-300">{item.title}</div>
 
                 {item.websiteUrl && (
-                  <a
-                    href={item.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      window.open(item.websiteUrl, '_blank', 'noopener,noreferrer')
+                    }}
                     title={`Kunjungi website resmi ${item.title}`}
                     aria-label={`Kunjungi website resmi ${item.title}`}
                     className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-navy-950/70 text-white backdrop-blur-md transition-all hover:scale-110 hover:border-cyan-royal hover:bg-navy-950 hover:text-cyan-royal"
                   >
                     <Globe size={16} />
-                  </a>
+                  </button>
                 )}
               </div>
 
@@ -102,7 +114,7 @@ export default function Portfolio() {
                 )}
                 <p className="text-xs leading-relaxed text-slate-400">{item.description}</p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

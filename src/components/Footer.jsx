@@ -1,9 +1,9 @@
 import { Check, Mail, MapPin } from 'lucide-react'
-import { useContent } from '../context/ContentContext'
+import { useDisplayContent } from '../context/LanguageContext'
 import logoFull from '../assets/logo-full.png'
 
 export default function Footer() {
-  const { content } = useContent()
+  const { content } = useDisplayContent()
   const { footer, nav, contact, services } = content
 
   return (
