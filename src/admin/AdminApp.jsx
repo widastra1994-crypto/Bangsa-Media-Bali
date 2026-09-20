@@ -30,6 +30,7 @@ import InvoicesList from './accounting/InvoicesList'
 import ExpensesEditor from './accounting/ExpensesEditor'
 import CommissionsList from './accounting/CommissionsList'
 import UserManagement from './accounting/UserManagement'
+import SubscriptionsEditor from './accounting/SubscriptionsEditor'
 
 // `roles: null` -> tampil untuk semua role yang bisa masuk /admin (owner, admin, staff, viewer).
 // Role 'client' TIDAK PERNAH melihat /admin sama sekali (diarahkan ke pesan terpisah).
@@ -63,6 +64,7 @@ const TAB_GROUPS = [
       { id: 'acc-projects', label: 'Daftar Proyek', Component: ProjectsList, roles: null },
       { id: 'acc-assets', label: 'Aset Digital', Component: DigitalAssetsList, roles: null },
       { id: 'acc-invoices', label: 'Invoice & Piutang', Component: InvoicesList, roles: ['owner', 'admin', 'staff'] },
+      { id: 'acc-subscriptions', label: 'Langganan Retainer', Component: SubscriptionsEditor, roles: ['owner', 'admin'] },
       { id: 'acc-bank', label: 'Rekonsiliasi Bank', Component: BankReconciliation, roles: ['owner', 'admin'] },
       { id: 'acc-tax', label: 'Pajak', Component: TaxModule, roles: ['owner', 'admin'] },
       { id: 'acc-audit', label: 'Audit Trail', Component: AuditTrailViewer, roles: ['owner', 'admin'] },

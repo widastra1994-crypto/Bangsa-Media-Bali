@@ -610,3 +610,52 @@ create policy "client_own_select" on public.acc_payments for select to authentic
     public.current_role_name() = 'client'
     and invoice_id in (select i.id from public.acc_invoices i join public.acc_clients c on c.id = i.client_id where c.client_user_id = auth.uid())
   );
+
+-- ============================================================================
+-- INVOICE BERULANG OTOMATIS (retainer bulanan: kelola iklan, maintenance, dsb)
+-- ============================================================================
+-- Edge Function "generate-recurring-invoices" (lihat supabase/functions/) jalan
+-- otomatis tiap hari via pg_cron. Anti-duplikat via last_invoiced_period
+-- (ditandai per-bulan) -- diuji: menjalankan function 2x pada hari yang sama
+-- hanya membuat 1 invoice, bukan 2.
+create table if not exists public.acc_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.acc_clients(id),
+  project_id uuid references public.acc_projects(id),
+  service_name text not null,
+  amount numeric(15,2) not null,
+  billing_day int not null default 1 check (billing_day between 1 and 28),
+  status text not null default 'active' check (status in ('active','paused','cancelled')),
+  last_invoiced_period date,
+  start_date date not null default current_date,
+  end_date date,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.acc_subscriptions enable row level security;
+create policy "oas_select" on public.acc_subscriptions for select to authenticated
+  using (public.current_role_name() in ('owner','admin','staff'));
+create policy "oas_insert" on public.acc_subscriptions for insert to authenticated
+  with check (public.current_role_name() in ('owner','admin','staff'));
+create policy "oas_update" on public.acc_subscriptions for update to authenticated
+  using (public.current_role_name() in ('owner','admin','staff'))
+  with check (public.current_role_name() in ('owner','admin','staff'));
+create policy "oa_delete" on public.acc_subscriptions for delete to authenticated
+  using (public.current_role_name() in ('owner','admin'));
+
+select cron.schedule(
+  'generate-recurring-invoices-job',
+  '15 1 * * *',
+  $$
+  select net.http_post(
+    url := 'https://ekzkxgpksqoyopzvaxsx.supabase.co/functions/v1/generate-recurring-invoices',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer sb_publishable_Zl9V7bkJkh9Tb-Bmt65wPw_fnYvmbYQ'
+    ),
+    body := '{}'::jsonb
+  );
+  $$
+);
