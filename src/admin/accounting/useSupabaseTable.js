@@ -1,26 +1,32 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 
-// Hook CRUD generik untuk tabel akunting (Supabase). Dipakai di semua layar
-// Master Data & transaksi supaya tidak menduplikasi boilerplate fetch/insert/
-// update/delete di setiap komponen.
+// Access token bisa kedaluwarsa kalau tab dibiarkan lama tidak aktif (browser
+// menjeda timer refresh-otomatis Supabase). Daripada langsung menampilkan
+// error mentah "JWT expired" ke pengguna, coba refresh sesi sekali lalu ulangi
+// query -- di kebanyakan kasus pengguna tidak akan sadar apa-apa terjadi.
+async function isExpiredJwtError(err) {
+  return /jwt expired/i.test(err?.message || '')
+}
+
 export function useSupabaseTable(table, { select = '*', orderBy = 'created_at', ascending = false } = {}) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     setLoading(true)
     setError('')
-    return supabase
-      .from(table)
-      .select(select)
-      .order(orderBy, { ascending })
-      .then(({ data, error: err }) => {
-        if (err) setError(err.message)
-        else setRows(data || [])
-        setLoading(false)
-      })
+    let { data, error: err } = await supabase.from(table).select(select).order(orderBy, { ascending })
+    if (err && (await isExpiredJwtError(err))) {
+      const { error: refreshErr } = await supabase.auth.refreshSession()
+      if (!refreshErr) {
+        ;({ data, error: err } = await supabase.from(table).select(select).order(orderBy, { ascending }))
+      }
+    }
+    if (err) setError(err.message)
+    else setRows(data || [])
+    setLoading(false)
   }, [table, select, orderBy, ascending])
 
   useEffect(() => {

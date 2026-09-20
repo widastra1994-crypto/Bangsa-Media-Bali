@@ -49,25 +49,29 @@ export default function AnalyticsDashboard() {
   const [error, setError] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
 
-  const loadLeads = () => {
+  const loadLeads = async () => {
     if (!isSupabaseConfigured) {
       setLoading(false)
       return
     }
     setLoading(true)
     setError('')
-    supabase
-      .from('consultation_leads')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data, error: err }) => {
-        if (err) {
-          setError(err.message)
-        } else {
-          setLeads(data || [])
-        }
-        setLoading(false)
-      })
+    let { data, error: err } = await supabase.from('consultation_leads').select('*').order('created_at', { ascending: false })
+    // Access token bisa kedaluwarsa kalau tab dibiarkan lama tidak aktif --
+    // coba refresh sesi sekali lalu ulangi query, daripada langsung tampilkan
+    // error mentah "JWT expired" ke pengguna.
+    if (err && /jwt expired/i.test(err.message)) {
+      const { error: refreshErr } = await supabase.auth.refreshSession()
+      if (!refreshErr) {
+        ;({ data, error: err } = await supabase.from('consultation_leads').select('*').order('created_at', { ascending: false }))
+      }
+    }
+    if (err) {
+      setError(err.message)
+    } else {
+      setLeads(data || [])
+    }
+    setLoading(false)
   }
 
   useEffect(() => {
