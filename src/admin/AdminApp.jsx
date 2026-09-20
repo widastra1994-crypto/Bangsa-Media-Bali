@@ -39,6 +39,7 @@ import {
   CreditCard,
   Clock,
   FileSignature,
+  ListChecks,
 } from 'lucide-react'
 import { adminSignOut, useAdminSession } from '../context/ContentContext'
 import { useUserRole } from './useUserRole'
@@ -72,6 +73,7 @@ import CommissionsList from './accounting/CommissionsList'
 import UserManagement from './accounting/UserManagement'
 import SubscriptionsEditor from './accounting/SubscriptionsEditor'
 import VendorBillsEditor from './accounting/VendorBillsEditor'
+import StaffProgressBoard from './accounting/StaffProgressBoard'
 import ProfitabilityReport from './accounting/ProfitabilityReport'
 import TimeLogsEditor from './accounting/TimeLogsEditor'
 import ContractsEditor from './accounting/ContractsEditor'
@@ -119,6 +121,7 @@ const TAB_GROUPS = [
       { id: 'acc-transaction', label: 'Transaksi Baru', icon: FilePlus2, Component: TransactionForm, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-projects', label: 'Daftar Proyek', icon: FolderOpen, Component: ProjectsList, roles: null },
       { id: 'acc-assets', label: 'Aset Digital', icon: Globe, Component: DigitalAssetsList, roles: null },
+      { id: 'acc-staff-progress', label: 'Progres Staf', icon: ListChecks, Component: StaffProgressBoard, roles: ['owner', 'admin', 'staff', 'viewer'] },
       { id: 'acc-time-logs', label: 'Jam Kerja Staf', icon: Clock, Component: TimeLogsEditor, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-contracts', label: 'Kontrak & SPK Digital', icon: FileSignature, Component: ContractsEditor, roles: ['owner', 'admin'] },
     ],
