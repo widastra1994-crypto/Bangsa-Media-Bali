@@ -1,5 +1,35 @@
+import { useState } from 'react'
 import { Quote, Star } from 'lucide-react'
 import { useDisplayContent } from '../context/LanguageContext'
+
+const AVATAR_COLORS = [
+  'from-cyan-500 to-blue-600',
+  'from-gold to-amber-600',
+  'from-fuchsia-500 to-purple-600',
+  'from-emerald-500 to-teal-600',
+]
+
+function getInitials(name = '') {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  return (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase()
+}
+
+function Avatar({ name, avatar, index }) {
+  const [failed, setFailed] = useState(false)
+  if (avatar && !failed) {
+    return <img src={avatar} alt={name} className="h-10 w-10 rounded-full object-cover" onError={() => setFailed(true)} />
+  }
+  return (
+    <div
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white ${
+        AVATAR_COLORS[index % AVATAR_COLORS.length]
+      }`}
+    >
+      {getInitials(name)}
+    </div>
+  )
+}
 
 export default function Testimonials() {
   const { content } = useDisplayContent()
@@ -16,7 +46,7 @@ export default function Testimonials() {
         </div>
 
         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
-          {testimonials.items.map((t) => (
+          {testimonials.items.map((t, index) => (
             <div
               key={t.id}
               className="relative flex flex-col rounded-2xl border border-slate-800 bg-navy-900/50 p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-gold/50"
@@ -29,14 +59,7 @@ export default function Testimonials() {
               </div>
               <p className="relative z-10 mt-4 flex-1 text-sm leading-relaxed text-slate-300">"{t.text}"</p>
               <div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-4">
-                {t.avatar && (
-                  <img
-                    src={t.avatar}
-                    alt={t.name}
-                    className="h-10 w-10 rounded-full object-cover"
-                    onError={(e) => e.currentTarget.remove()}
-                  />
-                )}
+                <Avatar name={t.name} avatar={t.avatar} index={index} />
                 <div>
                   <p className="text-sm font-bold text-white">{t.name}</p>
                   <p className="text-xs text-slate-400">

@@ -52,7 +52,10 @@ export default function PortfolioDetailPage() {
           {item.client && <p className="mt-2 text-sm text-slate-400">{t('Klien', 'Client')}: {item.client}</p>}
 
           {item.image && (
-            <img src={item.image} alt={item.title} className="mt-8 h-72 w-full rounded-2xl border border-white/10 object-cover sm:h-96" onError={(e) => e.currentTarget.remove()} />
+            <div className="relative mt-8 h-72 w-full overflow-hidden rounded-2xl border border-white/10 sm:h-96">
+              <img src={item.image} alt={item.title} className="h-full w-full object-cover" onError={(e) => e.currentTarget.parentElement.remove()} />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy-950/80 via-navy-950/5 to-transparent" />
+            </div>
           )}
 
           {item.results?.length > 0 && (

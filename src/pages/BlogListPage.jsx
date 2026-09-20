@@ -41,13 +41,19 @@ export default function BlogListPage() {
                 className="group overflow-hidden rounded-2xl border border-slate-800 bg-navy-900/50 transition-all duration-300 hover:-translate-y-1.5 hover:border-cyan-400/60"
               >
                 {post.coverImage && (
-                  <div className="h-44 overflow-hidden">
+                  <div className="relative h-44 overflow-hidden">
                     <img
                       src={post.coverImage}
                       alt={post.title}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       onError={(e) => e.currentTarget.remove()}
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-navy-900/10 to-transparent" />
+                    {post.tags?.[0] && (
+                      <span className="absolute left-3 top-3 rounded border border-cyan-400/30 bg-navy-950/70 px-2.5 py-1 text-[10px] font-bold text-cyan-300 backdrop-blur-sm">
+                        {post.tags[0]}
+                      </span>
+                    )}
                   </div>
                 )}
                 <div className="p-6">

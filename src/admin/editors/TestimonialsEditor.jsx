@@ -52,8 +52,8 @@ export default function TestimonialsEditor() {
             <Field label="Rating (1-5)">
               <NumberInput value={item.rating} onChange={(v) => updateItem(idx, 'rating', Math.min(5, Math.max(1, v)))} />
             </Field>
-            <Field label="URL Foto/Avatar (opsional)" className="sm:col-span-2">
-              <TextInput value={item.avatar} onChange={(v) => updateItem(idx, 'avatar', v)} placeholder="https://..." />
+            <Field label="URL Foto Asli Klien (opsional)" className="sm:col-span-2">
+              <TextInput value={item.avatar} onChange={(v) => updateItem(idx, 'avatar', v)} placeholder="Kosongkan untuk pakai avatar inisial otomatis" />
             </Field>
             <Field label="Isi Testimoni" className="sm:col-span-2">
               <TextArea rows={3} value={item.text} onChange={(v) => updateItem(idx, 'text', v)} />

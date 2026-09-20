@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Languages, Menu, Sparkles, X } from 'lucide-react'
+import { Menu, Sparkles, X } from 'lucide-react'
 import { useDisplayContent, useLanguage } from '../context/LanguageContext'
 import logoFull from '../assets/logo-full.png'
 
@@ -22,20 +22,27 @@ function NavLink({ item, onClick, className }) {
 }
 
 function LangToggle({ compact }) {
-  const { lang, toggleLang } = useLanguage()
+  const { lang, setLang } = useLanguage()
   return (
-    <button
-      type="button"
-      onClick={toggleLang}
-      aria-label="Ganti bahasa / Switch language"
-      title="Bahasa Indonesia / English"
-      className={`flex items-center gap-1.5 rounded-full border border-white/15 text-xs font-semibold text-slate-300 transition-colors hover:border-cyan-royal hover:text-cyan-royal ${
-        compact ? 'w-full justify-center px-4 py-2.5' : 'px-3 py-1.5'
-      }`}
+    <div
+      role="group"
+      aria-label="Pilih bahasa / Select language"
+      className={`flex items-center gap-0.5 rounded-full border border-white/15 bg-white/5 p-0.5 ${compact ? 'w-full' : ''}`}
     >
-      <Languages size={14} />
-      {lang === 'id' ? 'ID / EN' : 'EN / ID'}
-    </button>
+      {['id', 'en'].map((code) => (
+        <button
+          key={code}
+          type="button"
+          onClick={() => setLang(code)}
+          aria-pressed={lang === code}
+          className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${compact ? 'flex-1' : ''} ${
+            lang === code ? 'bg-gold text-navy-950' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          {code.toUpperCase()}
+        </button>
+      ))}
+    </div>
   )
 }
 
