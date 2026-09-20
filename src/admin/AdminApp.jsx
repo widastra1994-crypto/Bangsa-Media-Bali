@@ -1,5 +1,41 @@
 import { useEffect, useState } from 'react'
-import { ExternalLink, LogOut, ShieldAlert } from 'lucide-react'
+import {
+  ExternalLink,
+  LogOut,
+  ShieldAlert,
+  Menu,
+  X,
+  ChevronDown,
+  BarChart3,
+  Palette,
+  Sparkles,
+  Briefcase,
+  Tag,
+  Calculator,
+  FolderKanban,
+  Quote,
+  Newspaper,
+  Award,
+  Info,
+  Phone,
+  Bot,
+  LayoutDashboard,
+  Database,
+  FilePlus2,
+  FolderOpen,
+  Globe,
+  Receipt,
+  Repeat,
+  Landmark,
+  Percent,
+  History,
+  Wallet,
+  Users,
+  UserCog,
+  Layout,
+  Coins,
+  Settings,
+} from 'lucide-react'
 import { adminSignOut, useAdminSession } from '../context/ContentContext'
 import { useUserRole } from './useUserRole'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
@@ -37,45 +73,48 @@ import SubscriptionsEditor from './accounting/SubscriptionsEditor'
 const TAB_GROUPS = [
   {
     group: 'Konten Website',
+    icon: Layout,
     roles: ['owner', 'admin'],
     tabs: [
-      { id: 'analytics', label: 'Dashboard Analitik', Component: AnalyticsDashboard },
-      { id: 'brand', label: 'Brand & Navigasi', Component: BrandNavEditor },
-      { id: 'hero', label: 'Hero', Component: HeroEditor },
-      { id: 'services', label: 'Layanan', Component: ServicesEditor },
-      { id: 'pricing', label: 'Paket Harga', Component: PricingEditor },
-      { id: 'calculator', label: 'Kalkulator', Component: CalculatorEditor },
-      { id: 'portfolio', label: 'Portofolio', Component: PortfolioEditor },
-      { id: 'testimonials', label: 'Testimoni', Component: TestimonialsEditor },
-      { id: 'blog', label: 'Blog', Component: BlogEditor },
-      { id: 'advantages', label: 'Keunggulan', Component: AdvantagesEditor },
-      { id: 'about', label: 'Tentang', Component: AboutEditor },
-      { id: 'contact', label: 'Kontak & Footer', Component: ContactFooterEditor },
-      { id: 'assistant', label: 'Asisten Chat', Component: AssistantEditor },
+      { id: 'analytics', label: 'Dashboard Analitik', icon: BarChart3, Component: AnalyticsDashboard },
+      { id: 'brand', label: 'Brand & Navigasi', icon: Palette, Component: BrandNavEditor },
+      { id: 'hero', label: 'Hero', icon: Sparkles, Component: HeroEditor },
+      { id: 'services', label: 'Layanan', icon: Briefcase, Component: ServicesEditor },
+      { id: 'pricing', label: 'Paket Harga', icon: Tag, Component: PricingEditor },
+      { id: 'calculator', label: 'Kalkulator', icon: Calculator, Component: CalculatorEditor },
+      { id: 'portfolio', label: 'Portofolio', icon: FolderKanban, Component: PortfolioEditor },
+      { id: 'testimonials', label: 'Testimoni', icon: Quote, Component: TestimonialsEditor },
+      { id: 'blog', label: 'Blog', icon: Newspaper, Component: BlogEditor },
+      { id: 'advantages', label: 'Keunggulan', icon: Award, Component: AdvantagesEditor },
+      { id: 'about', label: 'Tentang', icon: Info, Component: AboutEditor },
+      { id: 'contact', label: 'Kontak & Footer', icon: Phone, Component: ContactFooterEditor },
+      { id: 'assistant', label: 'Asisten Chat', icon: Bot, Component: AssistantEditor },
     ],
   },
   {
     group: 'Akunting',
+    icon: Coins,
     roles: null,
     tabs: [
-      { id: 'acc-dashboard', label: 'Dashboard Akunting', Component: AccountingDashboard, roles: ['owner', 'admin'] },
-      { id: 'acc-master', label: 'Master Data', Component: MasterDataEditor, roles: ['owner', 'admin'] },
-      { id: 'acc-transaction', label: 'Transaksi Baru', Component: TransactionForm, roles: ['owner', 'admin', 'staff'] },
-      { id: 'acc-projects', label: 'Daftar Proyek', Component: ProjectsList, roles: null },
-      { id: 'acc-assets', label: 'Aset Digital', Component: DigitalAssetsList, roles: null },
-      { id: 'acc-invoices', label: 'Invoice & Piutang', Component: InvoicesList, roles: ['owner', 'admin', 'staff'] },
-      { id: 'acc-subscriptions', label: 'Langganan Retainer', Component: SubscriptionsEditor, roles: ['owner', 'admin'] },
-      { id: 'acc-bank', label: 'Rekonsiliasi Bank', Component: BankReconciliation, roles: ['owner', 'admin'] },
-      { id: 'acc-tax', label: 'Pajak', Component: TaxModule, roles: ['owner', 'admin'] },
-      { id: 'acc-audit', label: 'Audit Trail', Component: AuditTrailViewer, roles: ['owner', 'admin'] },
-      { id: 'acc-expenses', label: 'Pengeluaran', Component: ExpensesEditor, roles: ['owner', 'admin', 'staff'] },
-      { id: 'acc-commissions', label: 'Komisi Tim', Component: CommissionsList, roles: ['owner', 'admin', 'staff'] },
+      { id: 'acc-dashboard', label: 'Dashboard Akunting', icon: LayoutDashboard, Component: AccountingDashboard, roles: ['owner', 'admin'] },
+      { id: 'acc-master', label: 'Master Data', icon: Database, Component: MasterDataEditor, roles: ['owner', 'admin'] },
+      { id: 'acc-transaction', label: 'Transaksi Baru', icon: FilePlus2, Component: TransactionForm, roles: ['owner', 'admin', 'staff'] },
+      { id: 'acc-projects', label: 'Daftar Proyek', icon: FolderOpen, Component: ProjectsList, roles: null },
+      { id: 'acc-assets', label: 'Aset Digital', icon: Globe, Component: DigitalAssetsList, roles: null },
+      { id: 'acc-invoices', label: 'Invoice & Piutang', icon: Receipt, Component: InvoicesList, roles: ['owner', 'admin', 'staff'] },
+      { id: 'acc-subscriptions', label: 'Langganan Retainer', icon: Repeat, Component: SubscriptionsEditor, roles: ['owner', 'admin'] },
+      { id: 'acc-bank', label: 'Rekonsiliasi Bank', icon: Landmark, Component: BankReconciliation, roles: ['owner', 'admin'] },
+      { id: 'acc-tax', label: 'Pajak', icon: Percent, Component: TaxModule, roles: ['owner', 'admin'] },
+      { id: 'acc-audit', label: 'Audit Trail', icon: History, Component: AuditTrailViewer, roles: ['owner', 'admin'] },
+      { id: 'acc-expenses', label: 'Pengeluaran', icon: Wallet, Component: ExpensesEditor, roles: ['owner', 'admin', 'staff'] },
+      { id: 'acc-commissions', label: 'Komisi Tim', icon: Users, Component: CommissionsList, roles: ['owner', 'admin', 'staff'] },
     ],
   },
   {
     group: 'Pengaturan',
+    icon: Settings,
     roles: ['owner', 'admin'],
-    tabs: [{ id: 'acc-users', label: 'Kelola Pengguna', Component: UserManagement }],
+    tabs: [{ id: 'acc-users', label: 'Kelola Pengguna', icon: UserCog, Component: UserManagement }],
   },
 ]
 
@@ -87,6 +126,54 @@ function visibleGroupsForRole(role) {
   }).filter(Boolean)
 }
 
+function SidebarNav({ visibleGroups, currentTabId, onSelect, collapsed, onToggleGroup }) {
+  return (
+    <nav className="flex flex-col gap-1">
+      {visibleGroups.map((group) => {
+        const GroupIcon = group.icon
+        const isCollapsed = collapsed[group.group]
+        return (
+          <div key={group.group} className="mb-1">
+            <button
+              type="button"
+              onClick={() => onToggleGroup(group.group)}
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-white/5"
+            >
+              <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <GroupIcon size={13} /> {group.group}
+              </span>
+              <ChevronDown size={14} className={`text-slate-600 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+            </button>
+            {!isCollapsed && (
+              <div className="mt-0.5 flex flex-col gap-0.5">
+                {group.tabs.map((tab) => {
+                  const TabIcon = tab.icon
+                  const active = currentTabId === tab.id
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => onSelect(tab.id)}
+                      className={`group flex items-center gap-2.5 rounded-lg border-l-2 px-3 py-2.5 text-left text-sm font-medium transition-all ${
+                        active
+                          ? 'border-gold bg-gold/10 text-gold-soft'
+                          : 'border-transparent text-slate-400 hover:border-white/20 hover:bg-white/5 hover:text-slate-200'
+                      }`}
+                    >
+                      <TabIcon size={16} className={active ? 'text-gold-soft' : 'text-slate-500 group-hover:text-slate-300'} />
+                      <span className="truncate">{tab.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </nav>
+  )
+}
+
 export default function AdminApp() {
   const { authed: sessionAuthed, loading } = useAdminSession()
   const { role, loading: roleLoading } = useUserRole()
@@ -95,6 +182,8 @@ export default function AdminApp() {
   // sampai sessionAuthed dari hook menyusul (selalu terjadi pada mode Supabase).
   const [localOverride, setLocalOverride] = useState(null)
   const [activeTab, setActiveTab] = useState(null)
+  const [collapsedGroups, setCollapsedGroups] = useState({})
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     document.title = 'Admin CMS — Bangsa Media Bali'
@@ -143,13 +232,28 @@ export default function AdminApp() {
   const visibleGroups = visibleGroupsForRole(effectiveRole)
   const visibleTabs = visibleGroups.flatMap((g) => g.tabs)
   const currentTabId = activeTab && visibleTabs.some((t) => t.id === activeTab) ? activeTab : visibleTabs[0]?.id
-  const ActiveComponent = visibleTabs.find((t) => t.id === currentTabId)?.Component
+  const currentTab = visibleTabs.find((t) => t.id === currentTabId)
+  const ActiveComponent = currentTab?.Component
+
+  const toggleGroup = (name) => setCollapsedGroups((prev) => ({ ...prev, [name]: !prev[name] }))
+  const selectTab = (id) => {
+    setActiveTab(id)
+    setMobileMenuOpen(false)
+  }
 
   return (
     <div className="min-h-screen bg-nusatech-gradient text-slate-100">
       <header className="glass-panel sticky top-0 z-40 flex items-center justify-between px-5 py-3 lg:px-8">
         <div className="flex items-center gap-3">
-          <MascotIcon variant="assistant" size={40} />
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="rounded-lg p-2 text-slate-300 hover:bg-white/5 lg:hidden"
+            aria-label="Buka menu"
+          >
+            <Menu size={20} />
+          </button>
+          <MascotIcon variant="assistant" size={40} className="hidden sm:block" />
           <div>
             <p className="text-sm font-bold text-white">CMS Admin Bangsa Media Bali</p>
             <p className="text-[11px] text-slate-400">
@@ -159,40 +263,44 @@ export default function AdminApp() {
         </div>
         <div className="flex items-center gap-2">
           <a href="/" target="_blank" rel="noopener noreferrer" className="btn-secondary !px-3 !py-2 text-xs">
-            <ExternalLink size={14} /> Lihat Website
+            <ExternalLink size={14} /> <span className="hidden sm:inline">Lihat Website</span>
           </a>
           <button type="button" onClick={handleLogout} className="btn-secondary !px-3 !py-2 text-xs">
-            <LogOut size={14} /> Keluar
+            <LogOut size={14} /> <span className="hidden sm:inline">Keluar</span>
           </button>
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-6 lg:flex-row lg:px-8">
-        <aside className="lg:w-64 lg:shrink-0">
-          <nav className="glass-panel flex flex-col gap-4 overflow-x-auto rounded-2xl p-2 lg:overflow-visible">
-            {visibleGroups.map((group) => (
-              <div key={group.group}>
-                <p className="px-3 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{group.group}</p>
-                <div className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
-                  {group.tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`whitespace-nowrap rounded-xl px-4 py-2.5 text-left text-sm font-medium transition-colors ${
-                        currentTabId === tab.id ? 'bg-gold/15 text-gold-soft' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </nav>
+      <div className="mx-auto flex max-w-7xl gap-6 px-5 py-6 lg:px-8">
+        {/* Sidebar desktop: sticky, scroll independen dari konten utama */}
+        <aside className="hidden lg:block lg:w-72 lg:shrink-0">
+          <div className="glass-panel sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl p-3">
+            <SidebarNav visibleGroups={visibleGroups} currentTabId={currentTabId} onSelect={selectTab} collapsed={collapsedGroups} onToggleGroup={toggleGroup} />
+          </div>
         </aside>
 
-        <main className="glass-panel min-h-[70vh] flex-1 rounded-2xl p-6 lg:p-8">
+        {/* Sidebar mobile: drawer geser dari kiri dengan overlay */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+            <div className="glass-panel absolute inset-y-0 left-0 w-[85%] max-w-xs overflow-y-auto p-3 shadow-2xl">
+              <div className="mb-2 flex items-center justify-between px-2 py-1">
+                <span className="text-sm font-bold text-white">Menu</span>
+                <button type="button" onClick={() => setMobileMenuOpen(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5" aria-label="Tutup menu">
+                  <X size={18} />
+                </button>
+              </div>
+              <SidebarNav visibleGroups={visibleGroups} currentTabId={currentTabId} onSelect={selectTab} collapsed={collapsedGroups} onToggleGroup={toggleGroup} />
+            </div>
+          </div>
+        )}
+
+        <main className="glass-panel min-h-[70vh] w-full min-w-0 flex-1 rounded-2xl p-5 sm:p-6 lg:p-8">
+          {currentTab && (
+            <p className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
+              <currentTab.icon size={14} className="text-gold-soft" /> {currentTab.label}
+            </p>
+          )}
           {ActiveComponent && <ActiveComponent />}
         </main>
       </div>
