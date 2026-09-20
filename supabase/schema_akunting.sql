@@ -329,3 +329,64 @@ revoke execute on function public.handle_new_user() from public, anon, authentic
 -- send-finance-email > Secrets. Selama RESEND_API_KEY belum diisi, transaksi
 -- tetap tersimpan normal, hanya email yang tidak terkirim (pesan error jelas
 -- ditampilkan di CMS, tidak mengganggu penyimpanan data).
+
+-- ============================================================================
+-- FASE 3: NOTIFIKASI EMAIL BERJENJANG (H-60 s/d H+7)
+-- ============================================================================
+-- Log supaya pengingat yang sama tidak terkirim berulang. Untuk aset,
+-- expiry_date ikut jadi bagian unique key -> siklus perpanjangan berikutnya
+-- (expiry_date baru) otomatis dapat jatah pengingat baru lagi.
+create table if not exists public.acc_asset_reminder_log (
+  id uuid primary key default gen_random_uuid(),
+  asset_id uuid not null references public.acc_digital_assets(id) on delete cascade,
+  stage text not null check (stage in ('h60','h30','h14','h7','h1','h0')),
+  expiry_date date not null,
+  sent_at timestamptz not null default now(),
+  unique (asset_id, stage, expiry_date)
+);
+
+create table if not exists public.acc_invoice_reminder_log (
+  id uuid primary key default gen_random_uuid(),
+  invoice_id uuid not null references public.acc_invoices(id) on delete cascade,
+  stage text not null check (stage in ('h-3','h0','h+3','h+7')),
+  sent_at timestamptz not null default now(),
+  unique (invoice_id, stage)
+);
+
+alter table public.acc_asset_reminder_log enable row level security;
+alter table public.acc_invoice_reminder_log enable row level security;
+
+drop policy if exists "authenticated_full_access" on public.acc_asset_reminder_log;
+create policy "authenticated_full_access" on public.acc_asset_reminder_log for all to authenticated using (true) with check (true);
+
+drop policy if exists "authenticated_full_access" on public.acc_invoice_reminder_log;
+create policy "authenticated_full_access" on public.acc_invoice_reminder_log for all to authenticated using (true) with check (true);
+
+-- Edge Function "daily-reminders" (lihat supabase/functions/daily-reminders)
+-- dijalankan otomatis tiap hari jam 01:00 UTC (~09:00 WITA) via pg_cron di
+-- bawah ini. Fungsi ini memakai SERVICE_ROLE_KEY internal (bypass RLS) karena
+-- ini job sistem terjadwal, bukan request user yang login. Aktivasi email:
+-- sama seperti send-finance-email, isi RESEND_API_KEY & FROM_EMAIL di
+-- Supabase Dashboard > Edge Functions > daily-reminders > Secrets.
+--
+-- Skema A (Aset Digital): H-60 estimasi biaya, H-30 terbitkan invoice
+-- perpanjangan otomatis + kirim tagihan, H-14 follow-up status bayar,
+-- H-7 peringatan krusial, H-1 peringatan darurat, Hari H masuk grace period.
+-- Skema B (Piutang): H-3 pengingat, Hari H jatuh tempo, H+3 & H+7 overdue
+-- (invoice otomatis ditandai status 'overdue' begitu lewat jatuh tempo).
+create extension if not exists pg_cron with schema extensions;
+
+select cron.schedule(
+  'daily-reminders-job',
+  '0 1 * * *',
+  $$
+  select net.http_post(
+    url := 'https://ekzkxgpksqoyopzvaxsx.supabase.co/functions/v1/daily-reminders',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer sb_publishable_Zl9V7bkJkh9Tb-Bmt65wPw_fnYvmbYQ'
+    ),
+    body := '{}'::jsonb
+  );
+  $$
+);

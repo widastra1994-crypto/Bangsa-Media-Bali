@@ -98,7 +98,7 @@ export default function InvoicesList() {
     setLoading(true)
     supabase
       .from('acc_invoices')
-      .select('*, acc_clients(company_name, email), acc_projects(website_name)')
+      .select('*, acc_clients(company_name, email), acc_projects(website_name), acc_invoice_reminder_log(stage)')
       .order('created_at', { ascending: false })
       .then(({ data, error: err }) => {
         if (err) setError(err.message)
@@ -193,6 +193,12 @@ export default function InvoicesList() {
                   <Mail size={13} /> {sendingId === inv.id ? 'Mengirim...' : 'Kirim Ulang Email'}
                 </button>
               </div>
+
+              {inv.acc_invoice_reminder_log?.length > 0 && (
+                <p className="mt-2 text-[11px] text-slate-500">
+                  Pengingat otomatis terkirim: {inv.acc_invoice_reminder_log.map((r) => r.stage.toUpperCase()).join(', ')}
+                </p>
+              )}
 
               {payingId === inv.id && (
                 <PaymentForm

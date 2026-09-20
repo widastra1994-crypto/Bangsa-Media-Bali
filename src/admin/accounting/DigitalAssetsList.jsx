@@ -89,7 +89,9 @@ export default function DigitalAssetsList() {
     setLoading(true)
     supabase
       .from('acc_digital_assets')
-      .select('*, acc_projects(website_name, client_id, acc_clients(company_name, email)), domain_vendor:acc_vendors!acc_digital_assets_domain_vendor_id_fkey(vendor_name), server_vendor:acc_vendors!acc_digital_assets_server_vendor_id_fkey(vendor_name)')
+      .select(
+        '*, acc_projects(website_name, client_id, acc_clients(company_name, email)), domain_vendor:acc_vendors!acc_digital_assets_domain_vendor_id_fkey(vendor_name), server_vendor:acc_vendors!acc_digital_assets_server_vendor_id_fkey(vendor_name), acc_asset_reminder_log(stage, expiry_date)',
+      )
       .order('expiry_date', { ascending: true })
       .then(({ data, error: err }) => {
         if (err) setError(err.message)
@@ -172,6 +174,16 @@ export default function DigitalAssetsList() {
                   </p>
                 </div>
               </div>
+
+              {asset.acc_asset_reminder_log?.filter((r) => r.expiry_date === asset.expiry_date).length > 0 && (
+                <p className="mt-3 text-[11px] text-slate-500">
+                  Pengingat terkirim siklus ini:{' '}
+                  {asset.acc_asset_reminder_log
+                    .filter((r) => r.expiry_date === asset.expiry_date)
+                    .map((r) => r.stage.toUpperCase())
+                    .join(', ')}
+                </p>
+              )}
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <button type="button" onClick={() => setRenewingId(renewingId === asset.id ? null : asset.id)} className="btn-secondary !px-3 !py-1.5 text-xs">
