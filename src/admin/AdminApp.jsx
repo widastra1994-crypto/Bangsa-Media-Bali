@@ -20,6 +20,7 @@ import AccountingDashboard from './accounting/AccountingDashboard'
 import MasterDataEditor from './accounting/MasterDataEditor'
 import TransactionForm from './accounting/TransactionForm'
 import ProjectsList from './accounting/ProjectsList'
+import DigitalAssetsList from './accounting/DigitalAssetsList'
 import InvoicesList from './accounting/InvoicesList'
 import ExpensesEditor from './accounting/ExpensesEditor'
 import CommissionsList from './accounting/CommissionsList'
@@ -50,6 +51,7 @@ const TAB_GROUPS = [
       { id: 'acc-master', label: 'Master Data', Component: MasterDataEditor },
       { id: 'acc-transaction', label: 'Transaksi Baru', Component: TransactionForm },
       { id: 'acc-projects', label: 'Daftar Proyek', Component: ProjectsList },
+      { id: 'acc-assets', label: 'Aset Digital', Component: DigitalAssetsList },
       { id: 'acc-invoices', label: 'Invoice & Piutang', Component: InvoicesList },
       { id: 'acc-expenses', label: 'Pengeluaran', Component: ExpensesEditor },
       { id: 'acc-commissions', label: 'Komisi Tim', Component: CommissionsList },

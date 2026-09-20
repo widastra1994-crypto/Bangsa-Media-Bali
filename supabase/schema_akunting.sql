@@ -201,33 +201,47 @@ create trigger trg_receipt_number
   for each row execute function public.set_receipt_number();
 
 -- Setiap pembayaran baru: update paid_amount & status invoice terkait, dan
--- begitu invoice Lunas, alihkan komisi proyek dari pending -> payable.
+-- begitu invoice Lunas: alihkan komisi proyek dari pending -> payable, dan
+-- (Fase 2) jika invoice bertipe domain_renewal/server_renewal, perpanjang
+-- expiry_date aset digital terkait +1 tahun & set status kembali 'active'.
 create or replace function public.apply_payment_to_invoice()
 returns trigger language plpgsql set search_path = public as $$
 declare
   v_total numeric(15,2);
   v_paid numeric(15,2);
   v_project_id uuid;
+  v_invoice_type text;
+  v_new_status text;
 begin
-  select total_amount, coalesce(sum(p.amount_paid), 0), project_id
-    into v_total, v_paid, v_project_id
+  select total_amount, coalesce(sum(p.amount_paid), 0), project_id, invoice_type
+    into v_total, v_paid, v_project_id, v_invoice_type
   from public.acc_invoices i
   left join public.acc_payments p on p.invoice_id = i.id
   where i.id = new.invoice_id
-  group by i.total_amount, i.project_id;
+  group by i.total_amount, i.project_id, i.invoice_type;
+
+  v_new_status := case when v_paid >= v_total and v_total > 0 then 'paid'
+                       when v_paid > 0 then 'partial'
+                       else null end;
 
   update public.acc_invoices
   set paid_amount = v_paid,
-      status = case when v_paid >= v_total and v_total > 0 then 'paid'
-                    when v_paid > 0 then 'partial'
-                    else status end,
+      status = coalesce(v_new_status, status),
       updated_at = now()
   where id = new.invoice_id;
 
-  if v_paid >= v_total and v_total > 0 and v_project_id is not null then
+  if v_new_status = 'paid' and v_project_id is not null then
     update public.acc_commissions
     set status = 'payable'
     where project_id = v_project_id and status = 'pending';
+
+    if v_invoice_type in ('domain_renewal', 'server_renewal') then
+      update public.acc_digital_assets
+      set expiry_date = (coalesce(expiry_date, current_date) + interval '1 year')::date,
+          status = 'active',
+          last_checked_at = now()
+      where project_id = v_project_id;
+    end if;
   end if;
 
   return new;
