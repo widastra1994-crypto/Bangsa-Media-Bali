@@ -659,3 +659,160 @@ select cron.schedule(
   );
   $$
 );
+
+-- ============================================================================
+-- QRIS STATIS DI INVOICE
+-- ============================================================================
+-- QRIS di sini adalah kode QRIS statis milik bisnis (klien scan lalu masukkan
+-- nominal manual) -- BUKAN QRIS dinamis dengan nominal otomatis, yang perlu
+-- Payment Service Provider resmi (Midtrans/Xendit dkk). URL gambarnya
+-- disimpan di acc_tax_profile (owner/admin-only), jadi dibuatkan accessor
+-- sempit ini supaya Staff (form invoice) dan Client (portal) bisa
+-- menampilkannya tanpa diberi akses ke seluruh data pajak.
+alter table public.acc_tax_profile add column if not exists qris_image_url text;
+
+create or replace function public.get_public_qris_url()
+returns text
+language sql stable security definer
+set search_path = public
+as $$
+  select qris_image_url from public.acc_tax_profile where id = 1;
+$$;
+
+grant execute on function public.get_public_qris_url() to authenticated, anon;
+
+-- ============================================================================
+-- UTANG KE VENDOR (ACCOUNTS PAYABLE)
+-- ============================================================================
+-- Pelengkap piutang (acc_invoices/acc_payments yang sudah ada): melacak apa
+-- yang bisnis HUTANG ke vendor (hosting, domain registrar, dsb), bukan yang
+-- klien hutang ke bisnis. Saat tagihan vendor dibayar, trigger otomatis
+-- membuat baris acc_expenses (category='vendor_bill') supaya laporan
+-- pengeluaran tetap konsisten tanpa entri ganda manual.
+create table if not exists public.acc_vendor_bills (
+  id uuid primary key default gen_random_uuid(),
+  vendor_id uuid not null references public.acc_vendors(id),
+  bill_number text,
+  description text,
+  amount numeric(15,2) not null,
+  due_date date,
+  status text not null default 'unpaid' check (status in ('unpaid','partial','paid')),
+  paid_amount numeric(15,2) not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.acc_vendor_payments (
+  id uuid primary key default gen_random_uuid(),
+  vendor_bill_id uuid not null references public.acc_vendor_bills(id),
+  payment_date date not null default current_date,
+  amount_paid numeric(15,2) not null,
+  bank_account_id uuid references public.acc_bank_accounts(id),
+  notes text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.acc_expenses drop constraint if exists acc_expenses_category_check;
+alter table public.acc_expenses add constraint acc_expenses_category_check
+  check (category in ('domain_cost','server_cost','project_tools','office_operational','salary','marketing','vendor_bill'));
+
+create or replace function public.apply_vendor_payment()
+returns trigger language plpgsql set search_path = public as $$
+declare
+  v_total numeric(15,2);
+  v_paid numeric(15,2);
+  v_vendor_id uuid;
+  v_desc text;
+begin
+  select amount, coalesce(sum(p.amount_paid), 0), vendor_id, description
+    into v_total, v_paid, v_vendor_id, v_desc
+  from public.acc_vendor_bills b
+  left join public.acc_vendor_payments p on p.vendor_bill_id = b.id
+  where b.id = new.vendor_bill_id
+  group by b.amount, b.vendor_id, b.description;
+
+  update public.acc_vendor_bills
+  set paid_amount = v_paid,
+      status = case when v_paid >= v_total and v_total > 0 then 'paid' when v_paid > 0 then 'partial' else status end
+  where id = new.vendor_bill_id;
+
+  insert into public.acc_expenses (category, amount, vendor_id, bank_account_id, expense_date, notes)
+  values ('vendor_bill', new.amount_paid, v_vendor_id, new.bank_account_id, new.payment_date, coalesce(v_desc, 'Pembayaran tagihan vendor'));
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_vendor_payment on public.acc_vendor_payments;
+create trigger trg_vendor_payment after insert on public.acc_vendor_payments
+  for each row execute function public.apply_vendor_payment();
+revoke execute on function public.apply_vendor_payment() from public, anon, authenticated;
+
+alter table public.acc_vendor_bills enable row level security;
+alter table public.acc_vendor_payments enable row level security;
+
+create policy "oa_full" on public.acc_vendor_bills for all to authenticated
+  using (public.current_role_name() in ('owner','admin'))
+  with check (public.current_role_name() in ('owner','admin'));
+create policy "oa_full" on public.acc_vendor_payments for all to authenticated
+  using (public.current_role_name() in ('owner','admin'))
+  with check (public.current_role_name() in ('owner','admin'));
+
+-- ============================================================================
+-- JAM KERJA STAF (untuk analisis profitabilitas per proyek)
+-- ============================================================================
+create table if not exists public.acc_time_logs (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.acc_projects(id),
+  staff_id uuid not null references public.acc_staff_members(id),
+  work_date date not null default current_date,
+  hours numeric(6,2) not null,
+  description text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.acc_time_logs enable row level security;
+
+create policy "oa_full" on public.acc_time_logs for all to authenticated
+  using (public.current_role_name() in ('owner','admin'))
+  with check (public.current_role_name() in ('owner','admin'));
+create policy "staff_own_select" on public.acc_time_logs for select to authenticated
+  using (public.current_role_name() = 'staff' and staff_id in (select id from public.acc_staff_members where profile_id = auth.uid()));
+create policy "staff_own_insert" on public.acc_time_logs for insert to authenticated
+  with check (public.current_role_name() = 'staff' and staff_id in (select id from public.acc_staff_members where profile_id = auth.uid()));
+
+-- ============================================================================
+-- KONTRAK / SPK DIGITAL + TANDA TANGAN ELEKTRONIK
+-- ============================================================================
+-- Tanda tangan disimpan sebagai PNG base64 (signature_data) hasil canvas di
+-- Portal Klien -- bukan integrasi meterai/PSrE resmi (PeruriSign dkk), murni
+-- persetujuan elektronik yang direkam dengan jejak audit (nama pengetik +
+-- timestamp) sebagaimana lazim untuk dokumen internal non-notariil.
+create table if not exists public.acc_contracts (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references public.acc_projects(id),
+  client_id uuid not null references public.acc_clients(id),
+  title text not null,
+  content text not null,
+  status text not null default 'draft' check (status in ('draft','sent','signed')),
+  signature_data text,
+  signed_by_name text,
+  signed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.acc_contracts enable row level security;
+
+create policy "oas_select" on public.acc_contracts for select to authenticated
+  using (public.current_role_name() in ('owner','admin','staff'));
+create policy "oas_insert" on public.acc_contracts for insert to authenticated
+  with check (public.current_role_name() in ('owner','admin','staff'));
+create policy "oas_update" on public.acc_contracts for update to authenticated
+  using (public.current_role_name() in ('owner','admin','staff'))
+  with check (public.current_role_name() in ('owner','admin','staff'));
+create policy "oa_delete" on public.acc_contracts for delete to authenticated
+  using (public.current_role_name() in ('owner','admin'));
+create policy "client_own_select" on public.acc_contracts for select to authenticated
+  using (public.current_role_name() = 'client' and client_id in (select id from public.acc_clients where client_user_id = auth.uid()));
+create policy "client_own_sign" on public.acc_contracts for update to authenticated
+  using (public.current_role_name() = 'client' and client_id in (select id from public.acc_clients where client_user_id = auth.uid()))
+  with check (public.current_role_name() = 'client' and client_id in (select id from public.acc_clients where client_user_id = auth.uid()));

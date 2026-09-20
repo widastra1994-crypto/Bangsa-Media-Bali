@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, Calendar, CheckCircle2, Download, FileText, Globe, LogOut, Mail, Send } from 'lucide-react'
+import { AlertTriangle, Calendar, CheckCircle2, Download, FileSignature, FileText, Globe, LogOut, Mail, Send } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { useContent } from '../context/ContentContext'
 import MascotIcon from '../components/MascotIcon'
+import SignaturePad from '../components/SignaturePad'
 
 // Lazy-load jsPDF (lumayan besar) hanya saat tombol unduh benar-benar diklik,
 // supaya pengunjung website biasa (yang tidak pernah buka /portal) tidak ikut
 // memuatnya di beranda.
 const downloadInvoicePdf = (...args) => import('../lib/pdfGenerator').then((m) => m.generateInvoicePdf(...args))
 const downloadReceiptPdf = (...args) => import('../lib/pdfGenerator').then((m) => m.generateReceiptPdf(...args))
+const downloadContractPdf = (...args) => import('../lib/pdfGenerator').then((m) => m.generateContractPdf(...args))
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -78,15 +80,81 @@ function LoginForm() {
   )
 }
 
+function SignContractCard({ contract, client, brand, onSigned }) {
+  const [signature, setSignature] = useState(null)
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [expanded, setExpanded] = useState(false)
+
+  const submit = async () => {
+    if (!signature || !name.trim()) {
+      setError('Tanda tangan dan nama lengkap wajib diisi.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    const { error: err } = await supabase
+      .from('acc_contracts')
+      .update({ status: 'signed', signature_data: signature, signed_by_name: name.trim(), signed_at: new Date().toISOString() })
+      .eq('id', contract.id)
+    setBusy(false)
+    if (err) setError(err.message)
+    else onSigned()
+  }
+
+  return (
+    <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-sm font-bold text-white">
+          <FileSignature size={15} className="text-amber-300" /> {contract.title}
+        </p>
+        <button type="button" onClick={() => setExpanded((v) => !v)} className="text-xs font-semibold text-amber-300 hover:text-amber-200">
+          {expanded ? 'Tutup' : 'Baca & Tanda Tangani'}
+        </button>
+      </div>
+      {expanded && (
+        <div className="mt-3 space-y-3">
+          <div className="max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-navy-950/60 p-3 text-xs leading-relaxed text-slate-300">
+            {contract.content.split('\n').map((line, i) => (
+              <p key={i} className="mb-2">
+                {line}
+              </p>
+            ))}
+          </div>
+          <input
+            type="text"
+            placeholder="Ketik nama lengkap Anda sebagai konfirmasi"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="input-field"
+          />
+          <SignaturePad onChange={setSignature} />
+          {error && <p className="text-xs text-red-400">{error}</p>}
+          <button type="button" disabled={busy} onClick={submit} className="btn-primary w-full !py-2.5 text-xs disabled:opacity-60">
+            {busy ? 'Menyimpan...' : 'Setujui & Tanda Tangani Kontrak'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Dashboard({ session }) {
   const { content } = useContent()
-  const brand = { name: content.brand?.name, address: content.contact?.address, phone: content.contact?.phone, email: content.contact?.email }
+  const [qrisUrl, setQrisUrl] = useState('')
+  const brand = { name: content.brand?.name, address: content.contact?.address, phone: content.contact?.phone, email: content.contact?.email, qrisImageUrl: qrisUrl }
   const [client, setClient] = useState(null)
   const [projects, setProjects] = useState([])
   const [invoices, setInvoices] = useState([])
   const [assets, setAssets] = useState([])
+  const [contracts, setContracts] = useState([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+
+  useEffect(() => {
+    supabase.rpc('get_public_qris_url').then(({ data }) => setQrisUrl(data || ''))
+  }, [])
 
   useEffect(() => {
     const load = async () => {
@@ -109,10 +177,18 @@ function Dashboard({ session }) {
         const { data: assetRows } = await supabase.from('acc_digital_assets').select('*').in('project_id', projectIds)
         setAssets(assetRows || [])
       }
+      const { data: contractRows } = await supabase.from('acc_contracts').select('*').eq('client_id', clientRow.id).order('created_at', { ascending: false })
+      setContracts(contractRows || [])
       setLoading(false)
     }
     load()
   }, [session])
+
+  const reloadContracts = async () => {
+    if (!client) return
+    const { data } = await supabase.from('acc_contracts').select('*').eq('client_id', client.id).order('created_at', { ascending: false })
+    setContracts(data || [])
+  }
 
   const logout = () => supabase.auth.signOut()
 
@@ -152,6 +228,33 @@ function Dashboard({ session }) {
           <p className="text-xs text-gold-soft">
             Kode Referral Anda: <strong>{client.referral_code}</strong> -- bagikan ke rekan Anda untuk dapat potongan biaya perpanjangan domain/hosting tahun depan.
           </p>
+        </div>
+      )}
+
+      {contracts.filter((c) => c.status === 'sent').length > 0 && (
+        <div className="mt-4 space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-300">Kontrak Menunggu Tanda Tangan</h2>
+          {contracts
+            .filter((c) => c.status === 'sent')
+            .map((c) => (
+              <SignContractCard key={c.id} contract={c} client={client} brand={brand} onSigned={reloadContracts} />
+            ))}
+        </div>
+      )}
+
+      {contracts.filter((c) => c.status === 'signed').length > 0 && (
+        <div className="mt-4 space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Kontrak Tersimpan</h2>
+          {contracts
+            .filter((c) => c.status === 'signed')
+            .map((c) => (
+              <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-xs">
+                <span className="text-slate-300">{c.title}</span>
+                <button type="button" onClick={() => downloadContractPdf(c, client, brand)} className="flex items-center gap-1.5 text-cyan-royal hover:text-cyan-300">
+                  <Download size={12} /> Unduh PDF
+                </button>
+              </div>
+            ))}
         </div>
       )}
 
@@ -219,6 +322,14 @@ function Dashboard({ session }) {
                 <p className="font-semibold text-gold-soft">{idr(Number(inv.total_amount) - Number(inv.paid_amount))}</p>
               </div>
             </div>
+            {brand?.qrisImageUrl && Number(inv.total_amount) - Number(inv.paid_amount) > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+                <img src={brand.qrisImageUrl} alt="QRIS" className="h-20 w-20 rounded-lg border border-white/10 bg-white object-contain p-1" />
+                <p className="max-w-[220px] text-[11px] text-slate-400">
+                  Scan QRIS ini untuk membayar, lalu masukkan nominal <span className="font-semibold text-gold-soft">{idr(Number(inv.total_amount) - Number(inv.paid_amount))}</span> secara manual.
+                </p>
+              </div>
+            )}
             {inv.acc_payments?.length > 0 && (
               <div className="mt-3 border-t border-white/10 pt-3">
                 <p className="mb-1.5 text-[11px] font-semibold text-slate-400">Riwayat Pembayaran</p>

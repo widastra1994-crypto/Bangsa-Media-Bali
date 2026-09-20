@@ -35,6 +35,10 @@ import {
   Layout,
   Coins,
   Settings,
+  TrendingUp,
+  CreditCard,
+  Clock,
+  FileSignature,
 } from 'lucide-react'
 import { adminSignOut, useAdminSession } from '../context/ContentContext'
 import { useUserRole } from './useUserRole'
@@ -67,6 +71,12 @@ import ExpensesEditor from './accounting/ExpensesEditor'
 import CommissionsList from './accounting/CommissionsList'
 import UserManagement from './accounting/UserManagement'
 import SubscriptionsEditor from './accounting/SubscriptionsEditor'
+import VendorBillsEditor from './accounting/VendorBillsEditor'
+import ProfitabilityReport from './accounting/ProfitabilityReport'
+import TimeLogsEditor from './accounting/TimeLogsEditor'
+import ContractsEditor from './accounting/ContractsEditor'
+import GlobalSearch from './GlobalSearch'
+import NotificationCenter from './NotificationCenter'
 
 // `roles: null` -> tampil untuk semua role yang bisa masuk /admin (owner, admin, staff, viewer).
 // Role 'client' TIDAK PERNAH melihat /admin sama sekali (diarahkan ke pesan terpisah).
@@ -92,22 +102,47 @@ const TAB_GROUPS = [
     ],
   },
   {
-    group: 'Akunting',
-    icon: Coins,
-    roles: null,
+    group: 'Dashboard & Master',
+    icon: LayoutDashboard,
+    roles: ['owner', 'admin'],
     tabs: [
       { id: 'acc-dashboard', label: 'Dashboard Akunting', icon: LayoutDashboard, Component: AccountingDashboard, roles: ['owner', 'admin'] },
       { id: 'acc-master', label: 'Master Data', icon: Database, Component: MasterDataEditor, roles: ['owner', 'admin'] },
+      { id: 'acc-profitability', label: 'Profitabilitas Proyek', icon: TrendingUp, Component: ProfitabilityReport, roles: ['owner', 'admin'] },
+    ],
+  },
+  {
+    group: 'Operasional',
+    icon: FolderOpen,
+    roles: null,
+    tabs: [
       { id: 'acc-transaction', label: 'Transaksi Baru', icon: FilePlus2, Component: TransactionForm, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-projects', label: 'Daftar Proyek', icon: FolderOpen, Component: ProjectsList, roles: null },
       { id: 'acc-assets', label: 'Aset Digital', icon: Globe, Component: DigitalAssetsList, roles: null },
+      { id: 'acc-time-logs', label: 'Jam Kerja Staf', icon: Clock, Component: TimeLogsEditor, roles: ['owner', 'admin', 'staff'] },
+      { id: 'acc-contracts', label: 'Kontrak & SPK Digital', icon: FileSignature, Component: ContractsEditor, roles: ['owner', 'admin'] },
+    ],
+  },
+  {
+    group: 'Keuangan',
+    icon: Coins,
+    roles: null,
+    tabs: [
       { id: 'acc-invoices', label: 'Invoice & Piutang', icon: Receipt, Component: InvoicesList, roles: ['owner', 'admin', 'staff'] },
+      { id: 'acc-vendor-bills', label: 'Utang ke Vendor', icon: CreditCard, Component: VendorBillsEditor, roles: ['owner', 'admin'] },
       { id: 'acc-subscriptions', label: 'Langganan Retainer', icon: Repeat, Component: SubscriptionsEditor, roles: ['owner', 'admin'] },
-      { id: 'acc-bank', label: 'Rekonsiliasi Bank', icon: Landmark, Component: BankReconciliation, roles: ['owner', 'admin'] },
-      { id: 'acc-tax', label: 'Pajak', icon: Percent, Component: TaxModule, roles: ['owner', 'admin'] },
-      { id: 'acc-audit', label: 'Audit Trail', icon: History, Component: AuditTrailViewer, roles: ['owner', 'admin'] },
       { id: 'acc-expenses', label: 'Pengeluaran', icon: Wallet, Component: ExpensesEditor, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-commissions', label: 'Komisi Tim', icon: Users, Component: CommissionsList, roles: ['owner', 'admin', 'staff'] },
+      { id: 'acc-bank', label: 'Rekonsiliasi Bank', icon: Landmark, Component: BankReconciliation, roles: ['owner', 'admin'] },
+    ],
+  },
+  {
+    group: 'Pajak & Audit',
+    icon: Percent,
+    roles: ['owner', 'admin'],
+    tabs: [
+      { id: 'acc-tax', label: 'Pajak', icon: Percent, Component: TaxModule, roles: ['owner', 'admin'] },
+      { id: 'acc-audit', label: 'Audit Trail', icon: History, Component: AuditTrailViewer, roles: ['owner', 'admin'] },
     ],
   },
   {
@@ -262,6 +297,8 @@ export default function AdminApp() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <GlobalSearch onNavigate={selectTab} />
+          <NotificationCenter onNavigate={selectTab} />
           <a href="/" target="_blank" rel="noopener noreferrer" className="btn-secondary !px-3 !py-2 text-xs">
             <ExternalLink size={14} /> <span className="hidden sm:inline">Lihat Website</span>
           </a>

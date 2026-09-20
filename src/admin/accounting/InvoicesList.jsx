@@ -105,7 +105,12 @@ export default function InvoicesList() {
   const [notice, setNotice] = useState('')
   const bankAccounts = useSupabaseTable('acc_bank_accounts')
   const { content } = useContent()
-  const brand = { name: content.brand?.name, address: content.contact?.address, phone: content.contact?.phone, email: content.contact?.email }
+  const [qrisUrl, setQrisUrl] = useState('')
+  const brand = { name: content.brand?.name, address: content.contact?.address, phone: content.contact?.phone, email: content.contact?.email, qrisImageUrl: qrisUrl }
+
+  useEffect(() => {
+    supabase.rpc('get_public_qris_url').then(({ data }) => setQrisUrl(data || ''))
+  }, [])
 
   const load = useCallback(() => {
     setLoading(true)

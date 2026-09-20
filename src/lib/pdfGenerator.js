@@ -34,7 +34,28 @@ function drawFooter(doc, note) {
   doc.text(note || 'Dokumen ini dibuat otomatis oleh sistem dan sah tanpa tanda tangan basah.', 15, 286)
 }
 
-export function generateInvoicePdf(invoice, client, brand) {
+// QRIS di sini adalah kode QRIS statis milik bisnis (diunggah admin di
+// Pengaturan > Pajak), BUKAN QRIS dinamis dengan nominal otomatis -- itu
+// perlu Payment Service Provider resmi (Midtrans/Xendit dkk). Klien scan
+// lalu masukkan nominal manual. Best-effort: kalau gambar gagal dimuat
+// (CORS/404), PDF tetap lanjut tanpa gambar, cukup catatan teks.
+async function tryLoadImageAsDataUrl(url) {
+  if (!url) return null
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
+}
+
+export async function generateInvoicePdf(invoice, client, brand) {
   const doc = new jsPDF()
   drawLetterhead(doc, brand)
 
@@ -118,6 +139,20 @@ export function generateInvoicePdf(invoice, client, brand) {
   summaryRow('Sisa Tagihan', idr(Number(invoice.total_amount) - Number(invoice.paid_amount)), true)
   doc.setTextColor(...DARK)
 
+  if (brand?.qrisImageUrl && Number(invoice.total_amount) - Number(invoice.paid_amount) > 0) {
+    const dataUrl = await tryLoadImageAsDataUrl(brand.qrisImageUrl)
+    if (dataUrl) {
+      doc.setTextColor(...SLATE)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.text('SCAN UNTUK BAYAR (QRIS)', 15, sy + 5)
+      doc.addImage(dataUrl, 'PNG', 15, sy + 8, 32, 32)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.text('Masukkan nominal secara manual saat scan.', 50, sy + 24, { maxWidth: 60 })
+    }
+  }
+
   drawFooter(doc, 'Terima kasih atas kepercayaan Anda bermitra dengan kami.')
   doc.save(`${invoice.invoice_number}.pdf`)
 }
@@ -161,4 +196,63 @@ export function generateReceiptPdf(payment, invoice, client, brand) {
 
   drawFooter(doc, 'Kuitansi ini adalah bukti pembayaran sah, dibuat otomatis oleh sistem.')
   doc.save(`${payment.receipt_number}.pdf`)
+}
+
+export function generateContractPdf(contract, client, brand) {
+  const doc = new jsPDF()
+  drawLetterhead(doc, brand)
+
+  doc.setTextColor(...DARK)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(16)
+  const titleLines = doc.splitTextToSize(contract.title, 180)
+  doc.text(titleLines, 15, 48)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  doc.setTextColor(...SLATE)
+  doc.text(`Klien: ${client?.company_name || '-'}  |  Dibuat: ${formatDate(contract.created_at)}`, 15, 48 + titleLines.length * 6 + 4)
+
+  doc.setTextColor(...DARK)
+  doc.setFontSize(10)
+  const bodyLines = doc.splitTextToSize(contract.content, 180)
+  let y = 48 + titleLines.length * 6 + 14
+  const pageBottom = 250
+  bodyLines.forEach((line) => {
+    if (y > pageBottom) {
+      doc.addPage()
+      y = 20
+    }
+    doc.text(line, 15, y)
+    y += 5.5
+  })
+
+  if (contract.status === 'signed') {
+    if (y > pageBottom - 40) {
+      doc.addPage()
+      y = 20
+    }
+    y += 10
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.text('TANDA TANGAN ELEKTRONIK KLIEN', 15, y)
+    y += 4
+    if (contract.signature_data) {
+      doc.addImage(contract.signature_data, 'PNG', 15, y, 60, 24)
+      y += 28
+    }
+    doc.setDrawColor(...SLATE)
+    doc.line(15, y, 90, y)
+    y += 5
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.text(contract.signed_by_name || '-', 15, y)
+    y += 5
+    doc.setTextColor(...SLATE)
+    doc.setFontSize(8)
+    doc.text(`Ditandatangani elektronik pada ${new Date(contract.signed_at).toLocaleString('id-ID')}`, 15, y)
+  }
+
+  drawFooter(doc, 'Dokumen ini sah secara elektronik sesuai persetujuan yang diberikan klien melalui Portal Klien.')
+  doc.save(`Kontrak-${(contract.title || 'dokumen').replace(/[^a-z0-9]+/gi, '-')}.pdf`)
 }

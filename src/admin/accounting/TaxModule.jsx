@@ -48,6 +48,20 @@ function TaxProfileForm({ profile, onSaved }) {
           <label className="label-field">Tarif PPN (%)</label>
           <input type="number" step="0.1" className="input-field" value={form.ppn_rate} onChange={(e) => setForm({ ...form, ppn_rate: Number(e.target.value) })} />
         </div>
+        <div className="sm:col-span-2">
+          <label className="label-field">URL Gambar QRIS Statis (opsional)</label>
+          <input
+            className="input-field"
+            value={form.qris_image_url || ''}
+            onChange={(e) => setForm({ ...form, qris_image_url: e.target.value })}
+            placeholder="https://... (unggah gambar QRIS merchant Anda ke layanan hosting gambar, tempel link-nya di sini)"
+          />
+          <p className="mt-1 text-[11px] text-slate-500">
+            Ini QRIS statis milik bisnis Anda (klien scan lalu masukkan nominal manual) -- bukan QRIS dinamis otomatis-nominal, yang butuh Payment Service Provider resmi
+            (Midtrans/Xendit dkk).
+          </p>
+          {form.qris_image_url && <img src={form.qris_image_url} alt="Preview QRIS" className="mt-2 h-32 w-32 rounded-lg border border-white/10 object-contain bg-white p-1" />}
+        </div>
       </div>
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
       <button type="button" disabled={saving} onClick={save} className="btn-primary mt-4 !py-2 text-xs disabled:opacity-60">
