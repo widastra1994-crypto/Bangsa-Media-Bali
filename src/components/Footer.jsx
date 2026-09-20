@@ -28,7 +28,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-xs">
               {services.items.map((item) => (
                 <li key={item.id}>
-                  <a href="#layanan" className="transition-colors hover:text-cyan-royal">
+                  <a href="/#layanan" className="transition-colors hover:text-cyan-royal">
                     {item.title}
                   </a>
                 </li>

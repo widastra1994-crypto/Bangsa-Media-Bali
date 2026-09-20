@@ -24,8 +24,8 @@ export default function PricingPage() {
         <Navbar />
         <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">
           <p className="text-2xl font-bold text-white">{t('Paket tidak ditemukan', 'Package not found')}</p>
-          <Link to="/#paket" className="btn-primary">
-            <ArrowLeft size={16} /> {t('Kembali ke Beranda', 'Back to Home')}
+          <Link to="/paket" className="btn-primary">
+            <ArrowLeft size={16} /> {t('Kembali ke Semua Paket', 'Back to All Plans')}
           </Link>
         </div>
       </div>
@@ -37,7 +37,7 @@ export default function PricingPage() {
       <Navbar />
       <main className="pb-20 pt-32 lg:pb-28 lg:pt-40">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <Link to="/#paket" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-cyan-royal">
+          <Link to="/paket" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-cyan-royal">
             <ArrowLeft size={16} /> {t('Kembali ke Semua Paket', 'Back to All Plans')}
           </Link>
 

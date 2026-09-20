@@ -1,6 +1,22 @@
 import { useContent } from '../../context/ContentContext'
 import { useSectionDraft } from '../useSectionDraft'
-import { AddButton, ArrayCard, Field, SaveBar, TextInput } from '../FormFields'
+import { AddButton, ArrayCard, Field, SaveBar, SelectInput, TextInput } from '../FormFields'
+
+// Daftar halaman & bagian yang tersedia di website, dipakai sebagai pilihan cepat
+// tautan menu supaya admin tidak perlu mengetik href secara manual (rawan salah ketik).
+const PAGE_OPTIONS = [
+  { value: '/', label: 'Beranda (Halaman)' },
+  { value: '/tentang', label: 'Tentang (Halaman)' },
+  { value: '/paket', label: 'Paket Harga (Halaman)' },
+  { value: '/portofolio', label: 'Portofolio (Halaman)' },
+  { value: '/blog', label: 'Blog (Halaman)' },
+  { value: '/#layanan', label: 'Layanan (Bagian di Beranda)' },
+  { value: '/#kalkulator', label: 'Estimasi Biaya (Bagian di Beranda)' },
+  { value: '/#testimoni', label: 'Testimoni (Bagian di Beranda)' },
+  { value: '/#keunggulan', label: 'Keunggulan (Bagian di Beranda)' },
+  { value: '/#kontak', label: 'Kontak (Bagian di Beranda)' },
+  { value: '__custom__', label: 'Tautan Kustom...' },
+]
 
 export default function BrandNavEditor() {
   const { updateSection } = useContent()
@@ -51,25 +67,42 @@ export default function BrandNavEditor() {
 
       <h3 className="mb-3 mt-8 text-sm font-semibold uppercase tracking-wide text-gold-soft">Menu Navigasi</h3>
       <div className="space-y-4">
-        {nav.draft.menu.map((item, idx) => (
-          <ArrayCard key={item.id} title={`Menu ${idx + 1}`} onRemove={() => removeMenuItem(idx)}>
-            <Field label="Label">
-              <TextInput value={item.label} onChange={(v) => updateMenuItem(idx, 'label', v)} />
-            </Field>
-            <Field label="Tautan (href)">
-              <TextInput value={item.href} onChange={(v) => updateMenuItem(idx, 'href', v)} />
-            </Field>
-            <label className="flex items-center gap-2 text-xs text-slate-300 sm:col-span-2">
-              <input
-                type="checkbox"
-                checked={Boolean(item.primary)}
-                onChange={(e) => updateMenuItem(idx, 'primary', e.target.checked)}
-                className="h-4 w-4 rounded border-white/20 bg-white/5 accent-gold"
-              />
-              Tampil di Navbar Utama (jika tidak dicentang, hanya tampil di footer)
-            </label>
-          </ArrayCard>
-        ))}
+        {nav.draft.menu.map((item, idx) => {
+          const isKnownPage = PAGE_OPTIONS.some((opt) => opt.value === item.href)
+          const selectValue = isKnownPage ? item.href : '__custom__'
+          return (
+            <ArrayCard key={item.id} title={`Menu ${idx + 1}`} onRemove={() => removeMenuItem(idx)}>
+              <Field label="Label">
+                <TextInput value={item.label} onChange={(v) => updateMenuItem(idx, 'label', v)} />
+              </Field>
+              <Field label="Menuju Halaman">
+                <SelectInput
+                  value={selectValue}
+                  onChange={(v) => updateMenuItem(idx, 'href', v === '__custom__' ? '' : v)}
+                  options={PAGE_OPTIONS}
+                />
+              </Field>
+              {selectValue === '__custom__' && (
+                <Field label="Tautan Kustom (href)" className="sm:col-span-2">
+                  <TextInput
+                    value={item.href}
+                    onChange={(v) => updateMenuItem(idx, 'href', v)}
+                    placeholder="mis. /halaman-lain atau https://..."
+                  />
+                </Field>
+              )}
+              <label className="flex items-center gap-2 text-xs text-slate-300 sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={Boolean(item.primary)}
+                  onChange={(e) => updateMenuItem(idx, 'primary', e.target.checked)}
+                  className="h-4 w-4 rounded border-white/20 bg-white/5 accent-gold"
+                />
+                Tampil di Navbar Utama (jika tidak dicentang, hanya tampil di footer)
+              </label>
+            </ArrayCard>
+          )
+        })}
         <AddButton onClick={addMenuItem} label="Tambah Menu" />
       </div>
 

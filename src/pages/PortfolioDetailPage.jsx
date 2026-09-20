@@ -19,7 +19,7 @@ export default function PortfolioDetailPage() {
         <Navbar />
         <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">
           <p className="text-2xl font-bold text-white">{t('Proyek tidak ditemukan', 'Project not found')}</p>
-          <Link to="/#portofolio" className="btn-primary">
+          <Link to="/portofolio" className="btn-primary">
             <ArrowLeft size={16} /> {t('Kembali ke Portofolio', 'Back to Portfolio')}
           </Link>
         </div>
@@ -32,7 +32,7 @@ export default function PortfolioDetailPage() {
       <Navbar />
       <main className="pb-20 pt-32 lg:pb-28 lg:pt-40">
         <div className="mx-auto max-w-5xl px-5 lg:px-8">
-          <Link to="/#portofolio" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-cyan-royal">
+          <Link to="/portofolio" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-cyan-royal">
             <ArrowLeft size={16} /> {t('Kembali ke Portofolio', 'Back to Portfolio')}
           </Link>
 

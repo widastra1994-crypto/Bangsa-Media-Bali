@@ -5,7 +5,11 @@ import { useDisplayContent, useLanguage } from '../context/LanguageContext'
 import logoFull from '../assets/logo-full.png'
 
 function NavLink({ item, onClick, className }) {
-  if (item.href.startsWith('/')) {
+  // Tautan ke halaman murni (tanpa #) pakai Link (SPA, tanpa reload).
+  // Tautan berisi # (anchor di beranda, mis. "/#layanan") pakai <a> biasa supaya
+  // browser native yang menangani scroll-ke-anchor, baik dari beranda maupun halaman lain.
+  const isPageRoute = item.href.startsWith('/') && !item.href.includes('#')
+  if (isPageRoute) {
     return (
       <Link to={item.href} onClick={onClick} className={className}>
         {item.id === 'kalkulator' && <span className="h-2 w-2 animate-ping rounded-full bg-cyan-royal" />}
@@ -66,7 +70,7 @@ export default function Navbar() {
       }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
-        <a href="#beranda" className="flex items-center gap-2">
+        <a href="/" className="flex items-center gap-2">
           <img src={logoFull} alt="Bangsa Media Bali" className="h-9 w-auto object-contain lg:h-10" />
         </a>
 
@@ -83,7 +87,7 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-3 lg:flex">
           <LangToggle />
-          <a href="#kontak" className="btn-primary !px-5 !py-2.5 text-xs">
+          <a href="/#kontak" className="btn-primary !px-5 !py-2.5 text-xs">
             <Sparkles size={14} className="text-gold-soft" /> {nav.ctaLabel}
           </a>
         </div>
@@ -110,7 +114,7 @@ export default function Navbar() {
               <LangToggle compact />
             </li>
             <li>
-              <a href="#kontak" onClick={() => setOpen(false)} className="btn-primary w-full">
+              <a href="/#kontak" onClick={() => setOpen(false)} className="btn-primary w-full">
                 {nav.ctaLabel}
               </a>
             </li>
