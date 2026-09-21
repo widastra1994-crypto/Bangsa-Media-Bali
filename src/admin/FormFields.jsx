@@ -1,4 +1,6 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { ImageOff, Loader2, Plus, Trash2, Upload } from 'lucide-react'
+import { supabase } from '../lib/supabaseClient'
 
 export function Field({ label, children, className = '' }) {
   return (
@@ -54,6 +56,75 @@ export function SelectInput({ value, onChange, options }) {
         </option>
       ))}
     </select>
+  )
+}
+
+// Upload langsung ke Supabase Storage (bucket "site-images") -- pengguna
+// pilih file dari komputer, bukan tempel URL manual. Bucket publik supaya
+// gambar bisa tampil di website tanpa perlu auth, tapi upload dibatasi
+// owner/admin lewat RLS storage.objects.
+export function ImageUploadField({ value, onChange, pathPrefix = 'uploads', previewClassName = 'h-28 w-28' }) {
+  const inputRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setError('')
+    setUploading(true)
+    const ext = file.name.includes('.') ? file.name.split('.').pop() : 'jpg'
+    const path = `${pathPrefix}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+    const { error: uploadErr } = await supabase.storage.from('site-images').upload(path, file, { cacheControl: '3600', upsert: false })
+    if (uploadErr) {
+      setError(uploadErr.message)
+      setUploading(false)
+      return
+    }
+    const { data } = supabase.storage.from('site-images').getPublicUrl(path)
+    onChange(data.publicUrl)
+    setUploading(false)
+  }
+
+  return (
+    <div>
+      <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" className="hidden" onChange={handleFile} />
+      <div className="flex flex-wrap items-center gap-4">
+        {value ? (
+          <img
+            src={value}
+            alt="Preview"
+            className={`${previewClassName} rounded-2xl border border-white/10 bg-navy-900/60 object-contain`}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        ) : (
+          <div className={`flex ${previewClassName} items-center justify-center rounded-2xl border border-dashed border-white/15 text-slate-600`}>
+            <ImageOff size={20} />
+          </div>
+        )}
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => inputRef.current?.click()}
+            className="btn-secondary flex items-center gap-1.5 !px-3 !py-2 text-xs disabled:opacity-60"
+          >
+            {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            {uploading ? 'Mengunggah...' : 'Upload dari Komputer'}
+          </button>
+          {value && (
+            <button type="button" onClick={() => onChange('')} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-400">
+              <Trash2 size={12} /> Hapus Gambar
+            </button>
+          )}
+        </div>
+      </div>
+      {error && <p className="mt-2 text-xs text-red-400">Gagal unggah: {error}</p>}
+      <p className="mt-2 text-[11px] text-slate-500">Format: PNG, JPG, WEBP, SVG, atau GIF. Maks 5MB.</p>
+    </div>
   )
 }
 

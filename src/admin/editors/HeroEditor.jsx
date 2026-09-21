@@ -1,6 +1,5 @@
-import { ImageOff } from 'lucide-react'
 import { useSectionDraft } from '../useSectionDraft'
-import { AddButton, ArrayCard, Field, SaveBar, TextArea, TextInput } from '../FormFields'
+import { AddButton, ArrayCard, Field, ImageUploadField, SaveBar, TextArea, TextInput } from '../FormFields'
 
 export default function HeroEditor() {
   const { draft, setDraft, save, saved } = useSectionDraft('hero')
@@ -43,34 +42,10 @@ export default function HeroEditor() {
 
       <h3 className="mb-3 mt-8 text-sm font-semibold uppercase tracking-wide text-gold-soft">Ikon/Maskot Robot</h3>
       <div className="grid grid-cols-1 gap-4">
-        <Field label="URL Gambar Maskot (opsional)">
-          <TextInput
-            value={draft.mascotImage}
-            onChange={(v) => setDraft({ ...draft, mascotImage: v })}
-            placeholder="Kosongkan untuk pakai maskot robot animasi bawaan"
-          />
+        <Field label="Gambar Maskot (opsional)">
+          <ImageUploadField value={draft.mascotImage} onChange={(url) => setDraft({ ...draft, mascotImage: url })} pathPrefix="hero" />
         </Field>
-        {draft.mascotImage ? (
-          <div className="flex items-center gap-4">
-            <img
-              src={draft.mascotImage}
-              alt="Preview maskot"
-              className="h-28 w-28 rounded-2xl border border-white/10 object-contain bg-navy-900/60"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-                e.currentTarget.nextSibling.style.display = 'flex'
-              }}
-            />
-            <div className="hidden h-28 w-28 items-center justify-center gap-2 rounded-2xl border border-dashed border-red-500/40 text-xs text-red-400">
-              <ImageOff size={16} /> Gagal dimuat
-            </div>
-            <button type="button" onClick={() => setDraft({ ...draft, mascotImage: '' })} className="btn-secondary !px-3 !py-2 text-xs">
-              Pakai Maskot Bawaan
-            </button>
-          </div>
-        ) : (
-          <p className="text-xs text-slate-500">Saat ini memakai maskot robot animasi bawaan (SVG). Isi URL gambar di atas untuk menggantinya dengan gambar/logo sendiri.</p>
-        )}
+        {!draft.mascotImage && <p className="text-xs text-slate-500">Saat ini memakai maskot robot animasi bawaan (SVG). Upload gambar di atas untuk menggantinya dengan gambar/logo sendiri.</p>}
       </div>
 
       <h3 className="mb-3 mt-8 text-sm font-semibold uppercase tracking-wide text-gold-soft">Badge Statistik</h3>

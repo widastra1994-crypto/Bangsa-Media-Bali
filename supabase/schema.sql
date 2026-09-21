@@ -149,3 +149,28 @@ create policy "Admin can insert site content"
 -- Isi email & password Anda sendiri, lalu centang "Auto Confirm User".
 -- Email & password itulah yang dipakai untuk login di halaman /admin website.
 -- Tidak perlu SQL tambahan untuk langkah ini.
+
+-- ============================================================================
+-- STORAGE: UPLOAD GAMBAR DARI KOMPUTER (bucket "site-images")
+-- ============================================================================
+-- Dipakai ImageUploadField (src/admin/FormFields.jsx) supaya admin bisa unggah
+-- gambar (mis. maskot Hero) langsung dari komputer, bukan tempel URL manual.
+-- Bucket publik (perlu, supaya gambar tampil di website tanpa auth), tapi
+-- upload/ubah/hapus dibatasi Owner/Admin lewat RLS storage.objects --
+-- konsisten dengan pembatasan site_content lainnya.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('site-images', 'site-images', true, 5242880, array['image/png','image/jpeg','image/webp','image/svg+xml','image/gif'])
+on conflict (id) do update set public = true, file_size_limit = 5242880, allowed_mime_types = array['image/png','image/jpeg','image/webp','image/svg+xml','image/gif'];
+
+create policy "site_images_public_read" on storage.objects for select
+  using (bucket_id = 'site-images');
+
+create policy "site_images_admin_insert" on storage.objects for insert to authenticated
+  with check (bucket_id = 'site-images' and public.current_role_name() in ('owner','admin'));
+
+create policy "site_images_admin_update" on storage.objects for update to authenticated
+  using (bucket_id = 'site-images' and public.current_role_name() in ('owner','admin'))
+  with check (bucket_id = 'site-images' and public.current_role_name() in ('owner','admin'));
+
+create policy "site_images_admin_delete" on storage.objects for delete to authenticated
+  using (bucket_id = 'site-images' and public.current_role_name() in ('owner','admin'));
