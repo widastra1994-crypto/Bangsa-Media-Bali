@@ -902,3 +902,126 @@ begin
   return new;
 end;
 $function$;
+
+-- ============================================================================
+-- PERBAIKAN KEAMANAN: ROLE OWNER HANYA BISA DIUBAH OLEH OWNER
+-- ============================================================================
+-- Policy oa_manage_profiles memberi Owner & Admin hak yang sama atas profiles,
+-- sehingga Admin bisa menjadikan dirinya Owner atau menurunkan/menghapus Owner.
+-- Trigger ini menolaknya. Request tanpa auth.uid() (service role, SQL editor
+-- dashboard) tetap diizinkan. INSERT ikut diperiksa (kalau tidak, Admin bisa
+-- menghapus profil lalu memasukkannya ulang sebagai owner). Diuji: Admin -> Owner
+-- ditolak, hapus+insert sebagai owner ditolak, Admin menurunkan
+-- Owner ditolak, Admin mengubah role staf diizinkan, Owner mengubah role staf
+-- diizinkan.
+create or replace function public.protect_owner_role()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or public.current_role_name() = 'owner' then
+    return coalesce(new, old);
+  end if;
+
+  if tg_op = 'DELETE' then
+    if old.role = 'owner' then
+      raise exception 'Hanya Owner yang boleh menghapus akun Owner.';
+    end if;
+    return old;
+  end if;
+
+  if old.role = 'owner' or new.role = 'owner' then
+    raise exception 'Role Owner hanya bisa diberikan atau diubah oleh Owner.';
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function public.protect_owner_role() from public, anon, authenticated;
+
+drop trigger if exists trg_protect_owner_role on public.profiles;
+create trigger trg_protect_owner_role
+  before insert or update or delete on public.profiles
+  for each row execute function public.protect_owner_role();
+
+-- ============================================================================
+-- ATURAN PERAN FINAL (menggantikan protect_owner_role di atas) + LOOKUP USER
+-- ============================================================================
+-- 1. Akun Klien Portal tidak bisa diubah menjadi akun internal -- akun klien
+--    terkonfirmasi bisa saja milik penyerang yang mendaftar duluan dengan
+--    password pilihannya. Gunakan email lain untuk staf.
+-- 2. Role Owner/Admin hanya bisa diberikan Owner; akun Owner/Admin hanya bisa
+--    diubah/dihapus Owner (Admin hanya boleh mengedit baris miliknya tanpa
+--    mengubah role). Mencegah Admin menurunkan Admin lain lalu mengambil alih
+--    akunnya lewat link atur ulang password.
+-- Diuji (8 skenario, data uji di-rollback): Admin menurunkan Admin lain
+-- ditolak; Admin staff->admin ditolak; Admin staff->viewer boleh; Admin edit
+-- nama sendiri boleh; Admin/Owner client->staff ditolak; Owner staff->admin
+-- boleh; Owner admin->staff boleh.
+create or replace function public.protect_owner_role()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_caller text;
+begin
+  if auth.uid() is null then
+    return coalesce(new, old);
+  end if;
+
+  if tg_op = 'UPDATE' and old.role = 'client' and new.role is distinct from 'client' then
+    raise exception 'Akun Klien Portal tidak bisa diubah menjadi akun internal. Gunakan email lain untuk staf.';
+  end if;
+
+  v_caller := public.current_role_name();
+  if v_caller = 'owner' then
+    return coalesce(new, old);
+  end if;
+
+  if tg_op = 'DELETE' then
+    if old.role in ('owner', 'admin') then
+      raise exception 'Hanya Owner yang boleh menghapus akun Owner/Admin.';
+    end if;
+    return old;
+  end if;
+
+  if tg_op = 'INSERT' then
+    if new.role in ('owner', 'admin') then
+      raise exception 'Hanya Owner yang boleh memberi role Owner/Admin.';
+    end if;
+    return new;
+  end if;
+
+  if new.role in ('owner', 'admin') and new.role is distinct from old.role then
+    raise exception 'Hanya Owner yang boleh memberi role Owner/Admin.';
+  end if;
+  if old.role in ('owner', 'admin') and (new.role is distinct from old.role or old.id <> auth.uid()) then
+    raise exception 'Akun Owner/Admin hanya bisa diubah oleh Owner.';
+  end if;
+  return new;
+end;
+$$;
+
+-- Dipakai Edge Function invite-staff (service role) untuk memeriksa akun
+-- target SEBELUM membuat token apa pun, supaya pemanggil yang tidak berhak
+-- tidak bisa membatalkan token pemulihan milik akun lain.
+create or replace function public.internal_user_lookup(p_email text)
+returns table (user_id uuid, role text, confirmed boolean)
+language sql
+stable
+security definer
+set search_path = public, auth
+as $$
+  select u.id, p.role, u.email_confirmed_at is not null
+  from auth.users u
+  left join public.profiles p on p.id = u.id
+  where lower(u.email) = lower(p_email)
+  limit 1;
+$$;
+
+revoke execute on function public.internal_user_lookup(text) from public, anon, authenticated;
+grant execute on function public.internal_user_lookup(text) to service_role;
