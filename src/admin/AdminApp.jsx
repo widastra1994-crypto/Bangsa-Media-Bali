@@ -1,48 +1,8 @@
 import { useEffect, useState } from 'react'
-import {
-  ExternalLink,
-  LogOut,
-  ShieldAlert,
-  Menu,
-  X,
-  ChevronDown,
-  BarChart3,
-  Palette,
-  Sparkles,
-  Briefcase,
-  Tag,
-  Calculator,
-  FolderKanban,
-  Quote,
-  Newspaper,
-  Award,
-  Info,
-  Phone,
-  Bot,
-  LayoutDashboard,
-  Database,
-  FilePlus2,
-  FolderOpen,
-  Globe,
-  Receipt,
-  Repeat,
-  Landmark,
-  Percent,
-  History,
-  Wallet,
-  Users,
-  UserCog,
-  Layout,
-  Coins,
-  Settings,
-  TrendingUp,
-  CreditCard,
-  Clock,
-  FileSignature,
-  ListChecks,
-} from 'lucide-react'
+import { ExternalLink, LogOut, ShieldAlert, Menu, X, ChevronDown, Lock } from 'lucide-react'
 import { adminSignOut, useAdminSession } from '../context/ContentContext'
 import { useUserRole } from './useUserRole'
+import { visibleGroupsFor } from './menuConfig'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
 import AdminLogin from './AdminLogin'
 import MascotIcon from '../components/MascotIcon'
@@ -80,88 +40,40 @@ import ContractsEditor from './accounting/ContractsEditor'
 import GlobalSearch from './GlobalSearch'
 import NotificationCenter from './NotificationCenter'
 
-// `roles: null` -> tampil untuk semua role yang bisa masuk /admin (owner, admin, staff, viewer).
-// Role 'client' TIDAK PERNAH melihat /admin sama sekali (diarahkan ke pesan terpisah).
-const TAB_GROUPS = [
-  {
-    group: 'Konten Website',
-    icon: Layout,
-    roles: ['owner', 'admin'],
-    tabs: [
-      { id: 'analytics', label: 'Dashboard Analitik', icon: BarChart3, Component: AnalyticsDashboard },
-      { id: 'brand', label: 'Brand & Navigasi', icon: Palette, Component: BrandNavEditor },
-      { id: 'hero', label: 'Hero', icon: Sparkles, Component: HeroEditor },
-      { id: 'services', label: 'Layanan', icon: Briefcase, Component: ServicesEditor },
-      { id: 'pricing', label: 'Paket Harga', icon: Tag, Component: PricingEditor },
-      { id: 'calculator', label: 'Kalkulator', icon: Calculator, Component: CalculatorEditor },
-      { id: 'portfolio', label: 'Portofolio', icon: FolderKanban, Component: PortfolioEditor },
-      { id: 'testimonials', label: 'Testimoni', icon: Quote, Component: TestimonialsEditor },
-      { id: 'blog', label: 'Blog', icon: Newspaper, Component: BlogEditor },
-      { id: 'advantages', label: 'Keunggulan', icon: Award, Component: AdvantagesEditor },
-      { id: 'about', label: 'Tentang', icon: Info, Component: AboutEditor },
-      { id: 'contact', label: 'Kontak & Footer', icon: Phone, Component: ContactFooterEditor },
-      { id: 'assistant', label: 'Asisten Chat', icon: Bot, Component: AssistantEditor },
-    ],
-  },
-  {
-    group: 'Dashboard & Master',
-    icon: LayoutDashboard,
-    roles: ['owner', 'admin'],
-    tabs: [
-      { id: 'acc-dashboard', label: 'Dashboard Akunting', icon: LayoutDashboard, Component: AccountingDashboard, roles: ['owner', 'admin'] },
-      { id: 'acc-master', label: 'Master Data', icon: Database, Component: MasterDataEditor, roles: ['owner', 'admin'] },
-      { id: 'acc-profitability', label: 'Profitabilitas Proyek', icon: TrendingUp, Component: ProfitabilityReport, roles: ['owner', 'admin'] },
-    ],
-  },
-  {
-    group: 'Operasional',
-    icon: FolderOpen,
-    roles: null,
-    tabs: [
-      { id: 'acc-transaction', label: 'Transaksi Baru', icon: FilePlus2, Component: TransactionForm, roles: ['owner', 'admin', 'staff'] },
-      { id: 'acc-projects', label: 'Daftar Proyek', icon: FolderOpen, Component: ProjectsList, roles: null },
-      { id: 'acc-assets', label: 'Aset Digital', icon: Globe, Component: DigitalAssetsList, roles: null },
-      { id: 'acc-staff-progress', label: 'Progres Staf', icon: ListChecks, Component: StaffProgressBoard, roles: ['owner', 'admin', 'staff', 'viewer'] },
-      { id: 'acc-time-logs', label: 'Jam Kerja Staf', icon: Clock, Component: TimeLogsEditor, roles: ['owner', 'admin', 'staff'] },
-      { id: 'acc-contracts', label: 'Kontrak & SPK Digital', icon: FileSignature, Component: ContractsEditor, roles: ['owner', 'admin'] },
-    ],
-  },
-  {
-    group: 'Keuangan',
-    icon: Coins,
-    roles: null,
-    tabs: [
-      { id: 'acc-invoices', label: 'Invoice & Piutang', icon: Receipt, Component: InvoicesList, roles: ['owner', 'admin', 'staff'] },
-      { id: 'acc-vendor-bills', label: 'Utang ke Vendor', icon: CreditCard, Component: VendorBillsEditor, roles: ['owner', 'admin'] },
-      { id: 'acc-subscriptions', label: 'Langganan Retainer', icon: Repeat, Component: SubscriptionsEditor, roles: ['owner', 'admin'] },
-      { id: 'acc-expenses', label: 'Pengeluaran', icon: Wallet, Component: ExpensesEditor, roles: ['owner', 'admin', 'staff'] },
-      { id: 'acc-commissions', label: 'Komisi Tim', icon: Users, Component: CommissionsList, roles: ['owner', 'admin', 'staff'] },
-      { id: 'acc-bank', label: 'Rekonsiliasi Bank', icon: Landmark, Component: BankReconciliation, roles: ['owner', 'admin'] },
-    ],
-  },
-  {
-    group: 'Pajak & Audit',
-    icon: Percent,
-    roles: ['owner', 'admin'],
-    tabs: [
-      { id: 'acc-tax', label: 'Pajak', icon: Percent, Component: TaxModule, roles: ['owner', 'admin'] },
-      { id: 'acc-audit', label: 'Audit Trail', icon: History, Component: AuditTrailViewer, roles: ['owner', 'admin'] },
-    ],
-  },
-  {
-    group: 'Pengaturan',
-    icon: Settings,
-    roles: ['owner', 'admin'],
-    tabs: [{ id: 'acc-users', label: 'Kelola Pengguna', icon: UserCog, Component: UserManagement }],
-  },
-]
-
-function visibleGroupsForRole(role) {
-  return TAB_GROUPS.map((group) => {
-    if (group.roles && !group.roles.includes(role)) return null
-    const tabs = group.tabs.filter((tab) => !tab.roles || tab.roles.includes(role))
-    return tabs.length > 0 ? { ...group, tabs } : null
-  }).filter(Boolean)
+// Daftar menu, label, ikon & batas role ada di menuConfig.js; di sini hanya
+// pemetaan id menu -> komponen halamannya.
+const TAB_COMPONENTS = {
+  analytics: AnalyticsDashboard,
+  brand: BrandNavEditor,
+  hero: HeroEditor,
+  services: ServicesEditor,
+  pricing: PricingEditor,
+  calculator: CalculatorEditor,
+  portfolio: PortfolioEditor,
+  testimonials: TestimonialsEditor,
+  blog: BlogEditor,
+  advantages: AdvantagesEditor,
+  about: AboutEditor,
+  contact: ContactFooterEditor,
+  assistant: AssistantEditor,
+  'acc-dashboard': AccountingDashboard,
+  'acc-master': MasterDataEditor,
+  'acc-profitability': ProfitabilityReport,
+  'acc-transaction': TransactionForm,
+  'acc-projects': ProjectsList,
+  'acc-assets': DigitalAssetsList,
+  'acc-staff-progress': StaffProgressBoard,
+  'acc-time-logs': TimeLogsEditor,
+  'acc-contracts': ContractsEditor,
+  'acc-invoices': InvoicesList,
+  'acc-vendor-bills': VendorBillsEditor,
+  'acc-subscriptions': SubscriptionsEditor,
+  'acc-expenses': ExpensesEditor,
+  'acc-commissions': CommissionsList,
+  'acc-bank': BankReconciliation,
+  'acc-tax': TaxModule,
+  'acc-audit': AuditTrailViewer,
+  'acc-users': UserManagement,
 }
 
 function SidebarNav({ visibleGroups, currentTabId, onSelect, collapsed, onToggleGroup }) {
@@ -214,7 +126,7 @@ function SidebarNav({ visibleGroups, currentTabId, onSelect, collapsed, onToggle
 
 export default function AdminApp() {
   const { authed: sessionAuthed, loading } = useAdminSession()
-  const { role, loading: roleLoading } = useUserRole()
+  const { role, menuAccess, error: roleError, loading: roleLoading } = useUserRole()
   // Override lokal untuk umpan balik instan: mode fallback (tanpa Supabase) tidak
   // reaktif sendiri terhadap login/logout, jadi status efektifnya dipandu dari sini
   // sampai sessionAuthed dari hook menyusul (selalu terjadi pada mode Supabase).
@@ -248,6 +160,35 @@ export default function AdminApp() {
   const handleLogout = () => {
     adminSignOut()
     setLocalOverride(false)
+    setActiveTab(null)
+  }
+
+  if (isSupabaseConfigured && roleError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-nusatech-gradient px-5 text-center text-slate-100">
+        <ShieldAlert size={40} className="text-amber-400" />
+        <p className="text-lg font-bold">Profil akun gagal dimuat.</p>
+        <p className="max-w-sm text-sm text-slate-400">{roleError}</p>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => window.location.reload()} className="btn-primary !px-4 !py-2 text-xs">
+            Muat Ulang
+          </button>
+          <button type="button" onClick={handleLogout} className="btn-secondary !px-4 !py-2 text-xs">
+            <LogOut size={14} /> Keluar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Sesi sudah ada tapi role belum termuat (sesaat setelah login): tunggu, jangan
+  // menebak -- dulu jatuh ke 'owner' sehingga staf sekilas melihat semua menu.
+  if (isSupabaseConfigured && !role) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-nusatech-gradient text-sm text-slate-400">
+        Memuat sesi admin...
+      </div>
+    )
   }
 
   // Akun role 'client' (portal) tidak pernah dimaksudkan membuka CMS admin ini.
@@ -266,12 +207,14 @@ export default function AdminApp() {
     )
   }
 
-  const effectiveRole = role || 'owner' // mode fallback tanpa Supabase: akses penuh seperti sebelumnya
-  const visibleGroups = visibleGroupsForRole(effectiveRole)
+  // 'owner' hanya untuk mode fallback tanpa Supabase (akses penuh lokal).
+  const effectiveRole = isSupabaseConfigured ? role : role || 'owner'
+  const visibleGroups = visibleGroupsFor(effectiveRole, menuAccess)
   const visibleTabs = visibleGroups.flatMap((g) => g.tabs)
-  const currentTabId = activeTab && visibleTabs.some((t) => t.id === activeTab) ? activeTab : visibleTabs[0]?.id
+  const allowedTabIds = visibleTabs.map((t) => t.id)
+  const currentTabId = activeTab && allowedTabIds.includes(activeTab) ? activeTab : visibleTabs[0]?.id
   const currentTab = visibleTabs.find((t) => t.id === currentTabId)
-  const ActiveComponent = currentTab?.Component
+  const ActiveComponent = currentTab ? TAB_COMPONENTS[currentTab.id] : null
 
   const toggleGroup = (name) => setCollapsedGroups((prev) => ({ ...prev, [name]: !prev[name] }))
   const selectTab = (id) => {
@@ -300,8 +243,8 @@ export default function AdminApp() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <GlobalSearch onNavigate={selectTab} />
-          <NotificationCenter onNavigate={selectTab} />
+          <GlobalSearch onNavigate={selectTab} allowedTabIds={allowedTabIds} />
+          <NotificationCenter onNavigate={selectTab} allowedTabIds={allowedTabIds} />
           <a href="/" target="_blank" rel="noopener noreferrer" className="btn-secondary !px-3 !py-2 text-xs">
             <ExternalLink size={14} /> <span className="hidden sm:inline">Lihat Website</span>
           </a>
@@ -342,6 +285,13 @@ export default function AdminApp() {
             </p>
           )}
           {ActiveComponent && <ActiveComponent />}
+          {visibleTabs.length === 0 && (
+            <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
+              <Lock size={32} className="text-slate-600" />
+              <p className="text-sm font-semibold text-white">Belum ada menu yang diizinkan untuk akun Anda.</p>
+              <p className="max-w-sm text-xs text-slate-400">Hubungi Owner/Admin untuk mengatur akses menu Anda di halaman Kelola Pengguna.</p>
+            </div>
+          )}
         </main>
       </div>
     </div>

@@ -4,7 +4,14 @@ import { supabase } from '../lib/supabaseClient'
 
 // Pencarian cepat lintas Klien/Proyek/Invoice supaya tidak perlu buka tab
 // satu-satu untuk menemukan sesuatu di antara puluhan menu akunting.
-export default function GlobalSearch({ onNavigate }) {
+// Tiap kelompok hasil hanya dicari kalau menu tujuannya boleh dibuka pengguna.
+export default function GlobalSearch({ onNavigate, allowedTabIds }) {
+  const canSearch = {
+    clients: allowedTabIds.includes('acc-master'),
+    projects: allowedTabIds.includes('acc-projects'),
+    invoices: allowedTabIds.includes('acc-invoices'),
+  }
+  const anySearchable = canSearch.clients || canSearch.projects || canSearch.invoices
   const [open, setOpen] = useState(false)
   const [term, setTerm] = useState('')
   const [results, setResults] = useState({ clients: [], projects: [], invoices: [] })
@@ -22,21 +29,31 @@ export default function GlobalSearch({ onNavigate }) {
   useEffect(() => {
     if (!term.trim() || term.trim().length < 2) {
       setResults({ clients: [], projects: [], invoices: [] })
+      setLoading(false)
       return
     }
     setLoading(true)
+    let cancelled = false
     const timeout = setTimeout(async () => {
       const q = `%${term.trim()}%`
+      const none = Promise.resolve({ data: [] })
       const [clients, projects, invoices] = await Promise.all([
-        supabase.from('acc_clients').select('id, company_name, email').ilike('company_name', q).limit(5),
-        supabase.from('acc_projects').select('id, website_name, acc_clients(company_name)').ilike('website_name', q).limit(5),
-        supabase.from('acc_invoices').select('id, invoice_number, total_amount, acc_clients(company_name)').ilike('invoice_number', q).limit(5),
+        canSearch.clients ? supabase.from('acc_clients').select('id, company_name, email').ilike('company_name', q).limit(5) : none,
+        canSearch.projects ? supabase.from('acc_projects').select('id, website_name, acc_clients(company_name)').ilike('website_name', q).limit(5) : none,
+        canSearch.invoices
+          ? supabase.from('acc_invoices').select('id, invoice_number, total_amount, acc_clients(company_name)').ilike('invoice_number', q).limit(5)
+          : none,
       ])
+      if (cancelled) return
       setResults({ clients: clients.data || [], projects: projects.data || [], invoices: invoices.data || [] })
       setLoading(false)
     }, 300)
-    return () => clearTimeout(timeout)
-  }, [term])
+    return () => {
+      cancelled = true
+      clearTimeout(timeout)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [term, canSearch.clients, canSearch.projects, canSearch.invoices])
 
   const hasResults = results.clients.length + results.projects.length + results.invoices.length > 0
 
@@ -45,6 +62,10 @@ export default function GlobalSearch({ onNavigate }) {
     setOpen(false)
     setTerm('')
   }
+
+  if (!anySearchable) return null
+
+  const placeholder = [canSearch.clients && 'klien', canSearch.projects && 'proyek', canSearch.invoices && 'nomor invoice'].filter(Boolean).join(', ')
 
   return (
     <div ref={boxRef} className="relative">
@@ -60,7 +81,7 @@ export default function GlobalSearch({ onNavigate }) {
               type="text"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
-              placeholder="Cari klien, proyek, atau nomor invoice..."
+              placeholder={`Cari ${placeholder}...`}
               className="input-field pl-9 pr-8"
             />
             {term && (

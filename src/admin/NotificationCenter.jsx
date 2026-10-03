@@ -68,9 +68,9 @@ async function computeNotifications() {
   return items
 }
 
-export default function NotificationCenter({ onNavigate }) {
+export default function NotificationCenter({ onNavigate, allowedTabIds }) {
   const [open, setOpen] = useState(false)
-  const [items, setItems] = useState([])
+  const [allItems, setItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const boxRef = useRef(null)
@@ -104,6 +104,8 @@ export default function NotificationCenter({ onNavigate }) {
     }
   }, [])
 
+  // Notifikasi dari menu yang tidak boleh dibuka pengguna ini tidak ditampilkan.
+  const items = allItems.filter((i) => allowedTabIds.includes(i.tab))
   const highCount = items.filter((i) => i.severity === 'high').length
 
   return (

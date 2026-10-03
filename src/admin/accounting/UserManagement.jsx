@@ -1,7 +1,15 @@
-import { useCallback, useEffect, useState } from 'react'
-import { AlertTriangle, CheckCircle2, UserPlus } from 'lucide-react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
+import { AlertTriangle, CheckCircle2, SlidersHorizontal, UserPlus } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import { useSupabaseTable } from './useSupabaseTable'
+import { CONFIGURABLE_ROLES } from '../menuConfig'
+import MenuAccessEditor, { menuAccessSummary } from './MenuAccessEditor'
+
+const SUMMARY_TONE = {
+  all: 'text-slate-400',
+  custom: 'text-gold-soft',
+  none: 'text-red-400',
+}
 
 const ROLE_LABEL = { owner: 'Owner', admin: 'Admin', staff: 'Staff', viewer: 'Viewer', client: 'Klien (Portal)' }
 const ROLE_COLOR = {
@@ -22,6 +30,7 @@ export default function UserManagement() {
   const [notice, setNotice] = useState('')
   const [form, setForm] = useState({ email: '', name: '', role: 'staff' })
   const [inviting, setInviting] = useState(false)
+  const [accessEditingId, setAccessEditingId] = useState(null)
   const staffMembers = useSupabaseTable('acc_staff_members', { orderBy: 'name', ascending: true })
 
   const load = useCallback(() => {
@@ -118,18 +127,24 @@ export default function UserManagement() {
               <th className="px-4 py-3">Nama</th>
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Terhubung ke Data Staf</th>
+              <th className="px-4 py-3">Akses Menu</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={4} className="px-4 py-6 text-center text-slate-500">
                   Memuat...
                 </td>
               </tr>
             )}
-            {profiles.map((p) => (
-              <tr key={p.id} className="border-t border-white/5 text-slate-300">
+            {profiles.map((p) => {
+              const configurable = CONFIGURABLE_ROLES.includes(p.role)
+              const summary = configurable ? menuAccessSummary(p) : null
+              const editing = accessEditingId === p.id
+              return (
+              <Fragment key={p.id}>
+              <tr className="border-t border-white/5 text-slate-300">
                 <td className="px-4 py-3 font-semibold text-white">{p.name}</td>
                 <td className="px-4 py-3">
                   {p.role === 'owner' ? (
@@ -166,13 +181,50 @@ export default function UserManagement() {
                     <span className="text-slate-600">-</span>
                   )}
                 </td>
+                <td className="px-4 py-3">
+                  {configurable ? (
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[11px] font-semibold ${SUMMARY_TONE[summary.tone]}`}>{summary.text}</span>
+                      <button
+                        type="button"
+                        onClick={() => setAccessEditingId(editing ? null : p.id)}
+                        className="flex items-center gap-1 text-[11px] font-semibold text-cyan-royal hover:text-cyan-300"
+                      >
+                        <SlidersHorizontal size={12} /> {editing ? 'Tutup' : 'Atur'}
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-slate-600">{p.role === 'client' ? 'Portal Klien' : 'Akses penuh'}</span>
+                  )}
+                </td>
               </tr>
-            ))}
+              {editing && configurable && (
+                <tr className="border-t border-white/5">
+                  <td colSpan={4} className="px-4 py-4">
+                    <MenuAccessEditor
+                      key={p.role}
+                      profile={p}
+                      onClose={() => setAccessEditingId(null)}
+                      onSaved={(value) => {
+                        setProfiles((prev) => prev.map((row) => (row.id === p.id ? { ...row, menu_access: value } : row)))
+                        setAccessEditingId(null)
+                        setNotice(`Akses menu untuk ${p.name} disimpan. Berlaku begitu pengguna itu membuka kembali tab CMS-nya.`)
+                      }}
+                    />
+                  </td>
+                </tr>
+              )}
+              </Fragment>
+              )
+            })}
           </tbody>
         </table>
       </div>
       <p className="mt-3 text-[11px] text-slate-500">
         "Terhubung ke Data Staf" menentukan rekap komisi mana yang bisa dilihat akun Staff tersebut -- tanpa ini, akun Staff tidak akan melihat komisi pribadinya sama sekali.
+      </p>
+      <p className="mt-1 text-[11px] text-slate-500">
+        "Akses Menu" mengatur menu CMS yang tampil untuk akun Staff/Viewer. Owner dan Admin selalu melihat semua menu.
       </p>
     </div>
   )

@@ -864,3 +864,41 @@ create policy "client_own_select" on public.acc_project_tasks for select to auth
       where c.client_user_id = auth.uid()
     )
   );
+
+-- ============================================================================
+-- AKSES MENU CMS PER PENGGUNA (checklist di Kelola Pengguna)
+-- ============================================================================
+-- Daftar id menu (lihat src/admin/menuConfig.js) yang boleh dibuka akun
+-- staff/viewer. NULL = semua menu yang diizinkan role-nya. Checklist hanya
+-- MEMPERSEMPIT di dalam batas role, tidak pernah menambah di luar batas itu.
+-- Ini kontrol level menu; keamanan data tetap ditegakkan RLS per role.
+-- Hanya Owner/Admin yang bisa mengubahnya (policy oa_manage_profiles); staff
+-- hanya bisa SELECT baris profilnya sendiri (own_profile_select).
+alter table public.profiles add column if not exists menu_access text[];
+
+comment on column public.profiles.menu_access is
+  'Id menu admin CMS yang boleh dibuka (hanya berlaku untuk role staff/viewer). NULL = semua menu yang diizinkan role-nya. Hanya bisa diubah Owner/Admin (policy oa_manage_profiles).';
+
+-- ============================================================================
+-- PERBAIKAN KEAMANAN: handle_new_user TIDAK LAGI MEMPERCAYAI user_metadata
+-- ============================================================================
+-- Menggantikan versi "FINAL" di atas. raw_user_meta_data bisa diisi bebas oleh
+-- siapa pun saat signUp/signInWithOtp memakai anon key publik (dipakai login
+-- magic link Portal Klien) -- versi lama mengambil role dari sana sehingga
+-- siapa pun bisa mendaftar sebagai 'owner'. Diuji: akun probe yang mendaftar
+-- dengan metadata role 'owner' kini tetap mendapat 'client'. Audit saat
+-- perbaikan: tidak ada akun owner/admin tak dikenal. Role staf/admin/viewer
+-- kini ditetapkan Edge Function invite-staff lewat service role.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+begin
+  insert into public.profiles (id, name, role)
+  values (new.id, coalesce(new.raw_user_meta_data->>'name', new.email), 'client')
+  on conflict (id) do nothing;
+  return new;
+end;
+$function$;

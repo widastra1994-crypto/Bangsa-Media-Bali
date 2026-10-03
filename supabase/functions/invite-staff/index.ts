@@ -2,8 +2,9 @@
 // Dipanggil dari CMS admin (tab Kelola Pengguna) oleh Owner/Admin untuk
 // mengundang akun staf/admin/viewer baru. Memakai SERVICE_ROLE_KEY untuk
 // memanggil Supabase Admin API (invite email dikirim otomatis oleh Supabase
-// Auth). Role disisipkan ke user_metadata supaya trigger handle_new_user
-// otomatis membuat profil dengan role yang benar (bukan default 'client').
+// Auth). Trigger handle_new_user selalu membuat profil 'client' (role tidak
+// boleh diambil dari user_metadata yang bisa diisi siapa pun), jadi role yang
+// benar ditetapkan di sini lewat service role setelah undangan dibuat.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -67,11 +68,21 @@ Deno.serve(async (req) => {
     }
 
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-      data: { role, name: name || email },
+      data: { name: name || email },
       redirectTo: safeRedirect,
     })
     if (error) {
       return json({ ok: false, error: error.message })
+    }
+
+    const { error: roleError } = await admin
+      .from('profiles')
+      .upsert({ id: data.user.id, name: name || email, role }, { onConflict: 'id' })
+    if (roleError) {
+      return json({
+        ok: false,
+        error: `Undangan terkirim, tapi role gagal ditetapkan (${roleError.message}). Ubah role akun ini secara manual di daftar pengguna.`,
+      })
     }
 
     return json({ ok: true, userId: data.user.id })
