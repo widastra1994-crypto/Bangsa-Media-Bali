@@ -52,7 +52,7 @@ export default function UserManagement() {
       const res = await fetch(FUNCTION_URL, {
         method: 'POST',
         headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, redirectTo: `${window.location.origin}/admin/set-password` }),
       })
       const json = await res.json()
       if (!json.ok) throw new Error(json.error || 'Gagal mengundang pengguna.')
