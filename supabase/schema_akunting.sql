@@ -1025,3 +1025,56 @@ $$;
 
 revoke execute on function public.internal_user_lookup(text) from public, anon, authenticated;
 grant execute on function public.internal_user_lookup(text) to service_role;
+
+-- ============================================================================
+-- HAPUS AKUN PENGGUNA TANPA MENGHILANGKAN RIWAYAT
+-- ============================================================================
+-- Akun dihapus lewat Edge Function manage-user (Admin API, service role).
+-- 1. Audit trail menyimpan salinan nama pelaku (actor_name), diisi trigger
+--    dari profiles saat insert dan selalu menimpa nilai kiriman klien (tidak
+--    bisa dipalsukan). Nama tetap tampil setelah akunnya dihapus.
+-- 2. Referensi ke akun di tabel lain dilepas (ON DELETE SET NULL); datanya
+--    tetap ada. Diuji (di-rollback): setelah akun dihapus, log audit tetap ada
+--    dengan actor_name, acc_staff_members.profile_id & acc_clients.client_user_id
+--    menjadi NULL, profil terhapus; percobaan memalsukan actor_name tertimpa.
+alter table public.acc_audit_logs add column if not exists actor_name text;
+
+update public.acc_audit_logs a
+set actor_name = p.name
+from public.profiles p
+where p.id = a.user_id and a.actor_name is null;
+
+create or replace function public.fill_audit_actor_name()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  new.actor_name := case
+    when new.user_id is null then null
+    else (select name from public.profiles where id = new.user_id)
+  end;
+  return new;
+end;
+$$;
+
+revoke execute on function public.fill_audit_actor_name() from public, anon, authenticated;
+
+drop trigger if exists trg_fill_audit_actor_name on public.acc_audit_logs;
+create trigger trg_fill_audit_actor_name
+  before insert on public.acc_audit_logs
+  for each row execute function public.fill_audit_actor_name();
+
+alter table public.acc_staff_members drop constraint acc_staff_members_profile_id_fkey,
+  add constraint acc_staff_members_profile_id_fkey foreign key (profile_id) references public.profiles(id) on delete set null;
+alter table public.acc_clients drop constraint acc_clients_client_user_id_fkey,
+  add constraint acc_clients_client_user_id_fkey foreign key (client_user_id) references auth.users(id) on delete set null;
+alter table public.acc_projects drop constraint acc_projects_created_by_fkey,
+  add constraint acc_projects_created_by_fkey foreign key (created_by) references public.profiles(id) on delete set null;
+alter table public.acc_expenses drop constraint acc_expenses_approved_by_fkey,
+  add constraint acc_expenses_approved_by_fkey foreign key (approved_by) references public.profiles(id) on delete set null;
+alter table public.acc_audit_logs drop constraint acc_audit_logs_user_id_fkey,
+  add constraint acc_audit_logs_user_id_fkey foreign key (user_id) references public.profiles(id) on delete set null;
+alter table public.acc_bank_mutations drop constraint acc_bank_mutations_imported_by_fkey,
+  add constraint acc_bank_mutations_imported_by_fkey foreign key (imported_by) references public.profiles(id) on delete set null;

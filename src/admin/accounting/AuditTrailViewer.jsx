@@ -8,7 +8,15 @@ const ACTION_LABEL = {
   payment_recorded: 'Catat Pembayaran',
   commission_paid: 'Komisi Dicairkan',
   bank_mutation_matched: 'Mutasi Bank Dicocokkan',
+  vendor_bill_paid: 'Bayar Tagihan Vendor',
+  menu_access_changed: 'Ubah Akses Menu',
+  user_deleted: 'Hapus Akun Pengguna',
 }
+
+// actor_name = salinan nama pelaku saat aksi dicatat, supaya tetap terbaca
+// walau akunnya sudah dihapus (profil-nya hilang, user_id jadi kosong).
+const actorName = (r) => r.profiles?.name || (r.actor_name ? `${r.actor_name} (akun dihapus)` : '-')
+const detailOf = (r) => JSON.stringify(r.new_values || r.old_values || {})
 
 export default function AuditTrailViewer() {
   const [rows, setRows] = useState([])
@@ -31,10 +39,10 @@ export default function AuditTrailViewer() {
       'audit-trail',
       rows.map((r) => ({
         Waktu: r.created_at,
-        User: r.profiles?.name || r.user_id || '-',
+        User: actorName(r),
         Aksi: ACTION_LABEL[r.action] || r.action,
         Entitas: r.entity_name,
-        Detail: JSON.stringify(r.new_values || {}),
+        Detail: detailOf(r),
       })),
     )
   }
@@ -82,11 +90,11 @@ export default function AuditTrailViewer() {
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-white/5 text-slate-300">
                 <td className="px-4 py-3 whitespace-nowrap">{new Date(r.created_at).toLocaleString('id-ID')}</td>
-                <td className="px-4 py-3">{r.profiles?.name || '-'}</td>
+                <td className="px-4 py-3">{actorName(r)}</td>
                 <td className="px-4 py-3">{ACTION_LABEL[r.action] || r.action}</td>
                 <td className="px-4 py-3">{r.entity_name}</td>
-                <td className="max-w-xs truncate px-4 py-3 text-slate-500" title={JSON.stringify(r.new_values)}>
-                  {JSON.stringify(r.new_values)}
+                <td className="max-w-xs truncate px-4 py-3 text-slate-500" title={detailOf(r)}>
+                  {detailOf(r)}
                 </td>
               </tr>
             ))}

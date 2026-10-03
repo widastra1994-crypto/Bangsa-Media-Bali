@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
-import { AlertTriangle, Check, CheckCircle2, Copy, Link2, MessageCircle, SlidersHorizontal, UserPlus, X } from 'lucide-react'
+import { AlertTriangle, Check, CheckCircle2, Copy, Link2, MessageCircle, Pencil, SlidersHorizontal, Trash2, UserPlus, X } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import { useSupabaseTable } from './useSupabaseTable'
 import { CONFIGURABLE_ROLES } from '../menuConfig'
@@ -24,6 +24,46 @@ const ROLE_COLOR = {
 const rolesManageableBy = (callerRole) => (callerRole === 'owner' ? ['admin', 'staff', 'viewer'] : ['staff', 'viewer'])
 
 const FUNCTION_URL = isSupabaseConfigured ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-staff` : null
+const MANAGE_URL = isSupabaseConfigured ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-user` : null
+
+// Selaras dengan trigger protect_owner_role & Edge Function manage-user:
+// Owner mengelola semua akun selain Owner; Admin hanya Staff/Viewer/Klien.
+// Nama akun sendiri selalu boleh diubah; akun sendiri tidak bisa dihapus.
+const LOWER_ROLES = ['staff', 'viewer', 'client']
+const canEditName = (callerRole, myId, p) => p.id === myId || callerRole === 'owner' || (callerRole === 'admin' && LOWER_ROLES.includes(p.role))
+const canDeleteUser = (callerRole, myId, p) =>
+  p.id !== myId && p.role !== 'owner' && (callerRole === 'owner' || (callerRole === 'admin' && LOWER_ROLES.includes(p.role)))
+
+function DeleteUserDialog({ profile, deleting, onCancel, onConfirm }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={deleting ? undefined : onCancel} />
+      <div className="glass-panel relative w-full max-w-md rounded-2xl p-6 shadow-2xl">
+        <p className="flex items-center gap-2 text-base font-semibold text-white">
+          <Trash2 size={18} className="text-red-400" /> Hapus akun {profile.name}?
+        </p>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-slate-400">
+          <li>Akun ini tidak bisa login lagi dan dihapus permanen.</li>
+          <li>Riwayat tetap tersimpan: audit trail, proyek, pengeluaran, dan data staf/klien tidak ikut terhapus.</li>
+          {profile.role === 'client' && <li>Data klien di Master Data tetap ada; hanya akses Portal Klien-nya yang dicabut.</li>}
+        </ul>
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" disabled={deleting} onClick={onCancel} className="btn-secondary !px-4 !py-2 text-xs disabled:opacity-60">
+            Batal
+          </button>
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={onConfirm}
+            className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-60"
+          >
+            <Trash2 size={13} /> {deleting ? 'Menghapus...' : 'Hapus Permanen'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // Link undangan dibuat langsung oleh sistem (bukan email bawaan Supabase yang
 // dibatasi ~2 email/jam), jadi Owner bisa menyalin atau mengirimnya via WhatsApp.
@@ -112,7 +152,16 @@ export default function UserManagement() {
   const [inviting, setInviting] = useState(false)
   const [inviteResult, setInviteResult] = useState(null)
   const [accessEditingId, setAccessEditingId] = useState(null)
+  const [myId, setMyId] = useState(null)
+  const [nameEdit, setNameEdit] = useState(null)
+  const [savingName, setSavingName] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const staffMembers = useSupabaseTable('acc_staff_members', { orderBy: 'name', ascending: true })
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setMyId(data.session?.user?.id || null))
+  }, [])
 
   const load = useCallback(() => {
     setLoading(true)
@@ -174,6 +223,51 @@ export default function UserManagement() {
     }
   }
 
+  const saveName = async () => {
+    const name = nameEdit.value.trim()
+    if (!name) {
+      setError('Nama tidak boleh kosong.')
+      return
+    }
+    setSavingName(true)
+    setError('')
+    setNotice('')
+    // .select() supaya ketahuan bila update ditolak diam-diam (0 baris).
+    const { data, error: err } = await supabase.from('profiles').update({ name }).eq('id', nameEdit.id).select('id')
+    setSavingName(false)
+    if (err || !data?.length) {
+      setError(err?.message || 'Nama tidak tersimpan -- periksa hak akses akun Anda.')
+      return
+    }
+    setProfiles((prev) => prev.map((p) => (p.id === nameEdit.id ? { ...p, name } : p)))
+    setNameEdit(null)
+    setNotice('Nama pengguna disimpan.')
+  }
+
+  const confirmDelete = async () => {
+    setDeleting(true)
+    setError('')
+    setNotice('')
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const res = await fetch(MANAGE_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', Authorization: `Bearer ${sessionData?.session?.access_token}` },
+        body: JSON.stringify({ action: 'delete', userId: deleteTarget.id }),
+      })
+      const json = await res.json()
+      if (!json.ok) throw new Error(json.error || 'Gagal menghapus pengguna.')
+      setProfiles((prev) => prev.filter((p) => p.id !== deleteTarget.id))
+      setNotice(`Akun ${deleteTarget.name} sudah dihapus.`)
+      setDeleteTarget(null)
+      staffMembers.refresh()
+    } catch (e) {
+      setError(e.message)
+      setDeleteTarget(null)
+    }
+    setDeleting(false)
+  }
+
   const linkStaffMember = async (profileId, staffMemberId) => {
     const { error: err } = await supabase.from('acc_staff_members').update({ profile_id: profileId || null }).eq('id', staffMemberId)
     if (err) setError(err.message)
@@ -226,12 +320,13 @@ export default function UserManagement() {
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Terhubung ke Data Staf</th>
               <th className="px-4 py-3">Akses Menu</th>
+              <th className="px-4 py-3 text-right">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
                   Memuat...
                 </td>
               </tr>
@@ -240,10 +335,51 @@ export default function UserManagement() {
               const configurable = CONFIGURABLE_ROLES.includes(p.role)
               const summary = configurable ? menuAccessSummary(p) : null
               const editing = accessEditingId === p.id
+              const editingName = nameEdit?.id === p.id
+              const isMe = p.id === myId
               return (
               <Fragment key={p.id}>
               <tr className="border-t border-white/5 text-slate-300">
-                <td className="px-4 py-3 font-semibold text-white">{p.name}</td>
+                <td className="px-4 py-3 font-semibold text-white">
+                  {editingName ? (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        autoFocus
+                        value={nameEdit.value}
+                        onChange={(e) => setNameEdit({ ...nameEdit, value: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveName()
+                          if (e.key === 'Escape') setNameEdit(null)
+                        }}
+                        className="input-field !w-44 !py-1 text-xs"
+                        aria-label="Nama pengguna"
+                      />
+                      <button
+                        type="button"
+                        disabled={savingName}
+                        onClick={saveName}
+                        className="rounded-lg p-1.5 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50"
+                        aria-label="Simpan nama"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={savingName}
+                        onClick={() => setNameEdit(null)}
+                        className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-slate-300"
+                        aria-label="Batal edit"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {p.name}
+                      {isMe && <span className="ml-2 text-[10px] font-normal text-slate-500">(Anda)</span>}
+                    </>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   {/* Owner & Klien tidak bisa diubah dari sini; Admin hanya oleh Owner (trigger protect_owner_role). */}
                   {manageableRoles.includes(p.role) ? (
@@ -298,10 +434,34 @@ export default function UserManagement() {
                     <span className="text-[11px] text-slate-600">{p.role === 'client' ? 'Portal Klien' : 'Akses penuh'}</span>
                   )}
                 </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-1">
+                    {canEditName(callerRole, myId, p) && !editingName && (
+                      <button
+                        type="button"
+                        onClick={() => setNameEdit({ id: p.id, value: p.name || '' })}
+                        className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+                        title="Edit nama"
+                      >
+                        <Pencil size={12} /> Edit
+                      </button>
+                    )}
+                    {canDeleteUser(callerRole, myId, p) && (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(p)}
+                        className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-red-400/80 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                        title="Hapus akun"
+                      >
+                        <Trash2 size={12} /> Hapus
+                      </button>
+                    )}
+                  </div>
+                </td>
               </tr>
               {editing && configurable && (
                 <tr className="border-t border-white/5">
-                  <td colSpan={4} className="px-4 py-4">
+                  <td colSpan={5} className="px-4 py-4">
                     <MenuAccessEditor
                       key={p.role}
                       profile={p}
@@ -327,6 +487,10 @@ export default function UserManagement() {
       <p className="mt-1 text-[11px] text-slate-500">
         "Akses Menu" mengatur menu CMS yang tampil untuk akun Staff/Viewer. Owner dan Admin selalu melihat semua menu.
       </p>
+
+      {deleteTarget && (
+        <DeleteUserDialog profile={deleteTarget} deleting={deleting} onCancel={() => setDeleteTarget(null)} onConfirm={confirmDelete} />
+      )}
     </div>
   )
 }
