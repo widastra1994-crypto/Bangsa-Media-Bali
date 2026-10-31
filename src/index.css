@@ -2,42 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tema website: terang. Header & footer putih, latar halaman gradasi biru
+   cerah-putih (bg-site-gradient), teks utama ink (navy gelap). */
 @layer base {
   html {
     scroll-behavior: smooth;
   }
   body {
-    @apply bg-navy-950 text-slate-100 font-body antialiased;
+    @apply bg-white text-slate-700 font-body antialiased;
   }
   h1, h2, h3, h4 {
     @apply font-display;
   }
   ::selection {
-    @apply bg-gold/30 text-white;
+    @apply bg-sky-200 text-ink;
   }
 }
 
 @layer components {
   .glass-panel {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+    @apply border border-sky-100 bg-white/80 shadow-card backdrop-blur-xl;
   }
   .gold-border {
-    @apply border border-gold/40;
+    @apply border border-gold/50;
   }
   .section-eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-gold-soft;
+    @apply inline-flex items-center gap-2 rounded-full border border-gold/40 bg-white/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-gold-deep shadow-sm;
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-gradient-to-r from-ebtblue to-cyan-royal px-6 py-3 text-sm font-semibold text-white shadow-blue-glow transition-transform duration-300 hover:scale-[1.03] hover:shadow-[0_0_45px_-8px_rgba(67,100,247,0.75)] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/70;
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-gradient-to-r from-ebtblue to-cyan-royal px-6 py-3 text-sm font-semibold text-white shadow-blue-glow transition-transform duration-300 hover:scale-[1.03] hover:shadow-[0_0_45px_-8px_rgba(67,100,247,0.75)] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-gold/50 bg-white/5 px-6 py-3 text-sm font-semibold text-gold-soft backdrop-blur-md transition-all duration-300 hover:bg-gold/10 hover:border-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/70;
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-ebtblue/30 bg-white px-6 py-3 text-sm font-semibold text-ebtblue shadow-sm transition-all duration-300 hover:border-ebtblue/60 hover:bg-sky-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70;
   }
   .input-field {
-    @apply w-full rounded-lg border border-white/15 bg-navy-900/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/50;
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ink placeholder:text-slate-400 focus:border-ebtblue focus:outline-none focus:ring-2 focus:ring-ebtblue/20;
   }
   .label-field {
-    @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400;
+    @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600;
   }
 }
 
@@ -45,9 +47,9 @@
   width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #030816;
+  background: #eef6ff;
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(#0052D4, #4364F7);
+  background: linear-gradient(#38bdf8, #0052d4);
   border-radius: 999px;
 }

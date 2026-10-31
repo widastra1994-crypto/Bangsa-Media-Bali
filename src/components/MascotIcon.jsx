@@ -30,7 +30,7 @@ const VARIANTS = {
     head: ['#D4AF37', '#FFD86B'],
     eye: '#4364F7',
     Icon: MessageCircle,
-    iconColor: '#050B1F',
+    iconColor: '#FFD86B',
   },
   default: {
     head: ['#0052D4', '#D4AF37'],
@@ -69,10 +69,10 @@ export default function MascotIcon({ variant = 'default', size = 64, animated = 
         </defs>
 
         {/* aura belakang */}
-        <circle cx="50" cy="50" r="46" fill={`url(#${uid}-glow)`} opacity="0.18" />
+        <circle cx="50" cy="50" r="46" fill={`url(#${uid}-glow)`} opacity="0.3" />
 
         {/* badan/bust */}
-        <path d="M16,99 L31,64 H69 L84,99 Z" fill={`url(#${uid}-body)`} stroke="#ffffff20" strokeWidth="1" />
+        <path d="M16,99 L31,64 H69 L84,99 Z" fill={`url(#${uid}-body)`} stroke="#0F1F3D26" strokeWidth="1" />
 
         {/* selempang endek (sash) diagonal dengan motif diamond */}
         <path d="M32,64 L46,99 L38,99 L26,68 Z" fill="#D4AF37" opacity="0.9" />
@@ -93,7 +93,7 @@ export default function MascotIcon({ variant = 'default', size = 64, animated = 
         <rect x="42" y="58" width="16" height="8" rx="2" fill="#0A1330" />
 
         {/* kepala */}
-        <rect x="24" y="18" width="52" height="44" rx="16" fill={`url(#${uid}-head)`} stroke="#ffffff30" strokeWidth="1" />
+        <rect x="24" y="18" width="52" height="44" rx="16" fill={`url(#${uid}-head)`} stroke="#0F1F3D1F" strokeWidth="1" />
 
         {/* mata */}
         <circle cx="39" cy="40" r="4.2" fill={cfg.eye} className={animated ? 'animate-glow' : ''} />
@@ -106,7 +106,7 @@ export default function MascotIcon({ variant = 'default', size = 64, animated = 
         <path
           d="M20,24 Q50,-6 80,24 Q50,10 20,24 Z"
           fill="#D4AF37"
-          stroke="#FFE9A8"
+          stroke="#B8912C"
           strokeWidth="1"
         />
         <path d="M28,20 Q50,4 72,20" fill="none" stroke="#4364F7" strokeWidth="1.2" opacity="0.85" />

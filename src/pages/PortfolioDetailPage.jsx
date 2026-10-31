@@ -15,10 +15,10 @@ export default function PortfolioDetailPage() {
 
   if (!item) {
     return (
-      <div className="min-h-screen bg-nusatech-gradient text-slate-100">
+      <div className="min-h-screen bg-site-gradient text-slate-700">
         <Navbar />
         <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">
-          <p className="text-2xl font-bold text-white">{t('Proyek tidak ditemukan', 'Project not found')}</p>
+          <p className="text-2xl font-bold text-ink">{t('Proyek tidak ditemukan', 'Project not found')}</p>
           <Link to="/portofolio" className="btn-primary">
             <ArrowLeft size={16} /> {t('Kembali ke Portofolio', 'Back to Portfolio')}
           </Link>
@@ -28,42 +28,42 @@ export default function PortfolioDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-nusatech-gradient text-slate-100">
+    <div className="min-h-screen bg-site-gradient text-slate-700">
       <Navbar />
       <main className="pb-20 pt-32 lg:pb-28 lg:pt-40">
         <div className="mx-auto max-w-5xl px-5 lg:px-8">
-          <Link to="/portofolio" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-cyan-royal">
+          <Link to="/portofolio" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-cyan-royal">
             <ArrowLeft size={16} /> {t('Kembali ke Portofolio', 'Back to Portfolio')}
           </Link>
 
           <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded border border-cyan-400/30 bg-blue-500/20 px-2.5 py-1 text-[11px] font-bold text-cyan-300">
+            <span className="rounded border border-sky-200 bg-sky-100 px-2.5 py-1 text-[11px] font-bold text-ebtblue">
               {item.category}
             </span>
             {item.location && (
-              <span className="flex items-center gap-1 text-xs font-semibold text-gold-soft">
+              <span className="flex items-center gap-1 text-xs font-semibold text-gold-deep">
                 <MapPin size={13} /> {item.location}
               </span>
             )}
-            {item.year && <span className="text-xs text-slate-400">{item.year}</span>}
+            {item.year && <span className="text-xs text-slate-500">{item.year}</span>}
           </div>
 
-          <h1 className="mt-4 text-3xl font-bold text-white sm:text-4xl">{item.title}</h1>
-          {item.client && <p className="mt-2 text-sm text-slate-400">{t('Klien', 'Client')}: {item.client}</p>}
+          <h1 className="mt-4 text-3xl font-bold text-ink sm:text-4xl">{item.title}</h1>
+          {item.client && <p className="mt-2 text-sm text-slate-600">{t('Klien', 'Client')}: {item.client}</p>}
 
           {item.image && (
-            <div className="relative mt-8 h-72 w-full overflow-hidden rounded-2xl border border-white/10 sm:h-96">
+            <div className="relative mt-8 h-72 w-full overflow-hidden rounded-2xl border border-sky-100 shadow-card sm:h-96">
               <img src={item.image} alt={item.title} className="h-full w-full object-cover" onError={(e) => e.currentTarget.parentElement.remove()} />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy-950/80 via-navy-950/5 to-transparent" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent" />
             </div>
           )}
 
           {item.results?.length > 0 && (
             <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
               {item.results.map((r) => (
-                <div key={r.label} className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center">
+                <div key={r.label} className="rounded-2xl border border-sky-100 bg-white/80 p-5 text-center shadow-card">
                   <p className="text-2xl font-bold text-cyan-royal">{r.value}</p>
-                  <p className="mt-1 text-xs text-slate-400">{r.label}</p>
+                  <p className="mt-1 text-xs text-slate-600">{r.label}</p>
                 </div>
               ))}
             </div>
@@ -71,19 +71,19 @@ export default function PortfolioDetailPage() {
 
           <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2">
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-gold-soft">{t('Tantangan', 'The Challenge')}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-300">{item.challenge || '-'}</p>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-gold-deep">{t('Tantangan', 'The Challenge')}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.challenge || '-'}</p>
             </div>
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-gold-soft">{t('Solusi Kami', 'Our Solution')}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-300">{item.solution || item.description}</p>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-gold-deep">{t('Solusi Kami', 'Our Solution')}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.solution || item.description}</p>
             </div>
           </div>
 
           {item.tags?.filter(Boolean).length > 0 && (
             <div className="mt-8 flex flex-wrap gap-2">
               {item.tags.filter(Boolean).map((tag) => (
-                <span key={tag} className="rounded bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
+                <span key={tag} className="rounded bg-slate-200 px-2.5 py-1 text-xs text-slate-600">
                   {tag}
                 </span>
               ))}
@@ -92,14 +92,14 @@ export default function PortfolioDetailPage() {
 
           {item.gallery?.filter(Boolean).length > 0 && (
             <div className="mt-10">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gold-soft">{t('Galeri Proyek', 'Project Gallery')}</h2>
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gold-deep">{t('Galeri Proyek', 'Project Gallery')}</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {item.gallery.filter(Boolean).map((src, i) => (
                   <img
                     key={i}
                     src={src}
                     alt={`${item.title} ${i + 1}`}
-                    className="h-56 w-full rounded-xl border border-white/10 object-cover"
+                    className="h-56 w-full rounded-xl border border-sky-100 object-cover shadow-card"
                     onError={(e) => e.currentTarget.parentElement.removeChild(e.currentTarget)}
                   />
                 ))}

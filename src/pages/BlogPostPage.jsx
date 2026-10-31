@@ -21,10 +21,10 @@ export default function BlogPostPage() {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-nusatech-gradient text-slate-100">
+      <div className="min-h-screen bg-site-gradient text-slate-700">
         <Navbar />
         <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">
-          <p className="text-2xl font-bold text-white">Article not found / Artikel tidak ditemukan</p>
+          <p className="text-2xl font-bold text-ink">Article not found / Artikel tidak ditemukan</p>
           <Link to="/blog" className="btn-primary">
             <ArrowLeft size={16} /> {blog.backLabel}
           </Link>
@@ -34,27 +34,27 @@ export default function BlogPostPage() {
   }
 
   return (
-    <div className="min-h-screen bg-nusatech-gradient text-slate-100">
+    <div className="min-h-screen bg-site-gradient text-slate-700">
       <Navbar />
       <main className="pb-20 pt-32 lg:pb-28 lg:pt-40">
         <article className="mx-auto max-w-3xl px-5 lg:px-8">
-          <Link to="/blog" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-cyan-royal">
+          <Link to="/blog" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-cyan-royal">
             <ArrowLeft size={16} /> {blog.backLabel}
           </Link>
 
           {post.tags?.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {post.tags.map((tag) => (
-                <span key={tag} className="rounded bg-slate-800 px-2 py-1 text-[10px] text-slate-300">
+                <span key={tag} className="rounded bg-slate-200 px-2 py-1 text-[10px] text-slate-600">
                   {tag}
                 </span>
               ))}
             </div>
           )}
 
-          <h1 className="mt-4 text-3xl font-bold text-white sm:text-4xl">{post.title}</h1>
+          <h1 className="mt-4 text-3xl font-bold text-ink sm:text-4xl">{post.title}</h1>
 
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-400">
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-500">
             <span className="flex items-center gap-1.5">
               <User size={13} /> {post.author}
             </span>
@@ -67,12 +67,12 @@ export default function BlogPostPage() {
             <img
               src={post.coverImage}
               alt={post.title}
-              className="mt-8 h-auto w-full rounded-2xl border border-white/10 object-cover"
+              className="mt-8 h-auto w-full rounded-2xl border border-sky-100 object-cover shadow-card"
               onError={(e) => e.currentTarget.remove()}
             />
           )}
 
-          <div className="prose prose-invert mt-8 max-w-none space-y-4 text-sm leading-relaxed text-slate-300 sm:text-base">
+          <div className="prose mt-8 max-w-none space-y-4 text-sm leading-relaxed text-slate-700 sm:text-base">
             {post.content.split('\n').filter(Boolean).map((para, i) => (
               <p key={i}>{para}</p>
             ))}

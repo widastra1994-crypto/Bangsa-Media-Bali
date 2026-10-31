@@ -28,7 +28,7 @@ function Stepper({ completedSteps }) {
             <div className="flex flex-col items-center gap-1.5">
               <div
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold transition-colors ${
-                  done ? 'border-cyan-royal bg-cyan-royal text-navy-950' : 'border-white/20 bg-navy-900 text-slate-400'
+                  done ? 'border-cyan-royal bg-cyan-royal text-white' : 'border-slate-300 bg-white text-slate-500'
                 }`}
               >
                 {done ? <Check size={16} /> : idx + 1}
@@ -38,7 +38,7 @@ function Stepper({ completedSteps }) {
               </span>
             </div>
             {!isLast && (
-              <div className={`mx-2 h-0.5 flex-1 rounded transition-colors ${done ? 'bg-cyan-royal' : 'bg-white/10'}`} />
+              <div className={`mx-2 h-0.5 flex-1 rounded transition-colors ${done ? 'bg-cyan-royal' : 'bg-slate-200'}`} />
             )}
           </div>
         )
@@ -167,7 +167,7 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
   return (
     <div className="glass-panel rounded-3xl border border-cyan-royal/30 p-6 shadow-blue-glow sm:p-10">
       {contextNote && (
-        <div className="mb-6 rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-xs font-semibold text-gold-soft">
+        <div className="mb-6 rounded-xl border border-gold/50 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-gold-deep">
           {contextNote}
         </div>
       )}
@@ -175,8 +175,8 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-7">
           <div>
-            <label className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-royal text-xs font-black text-navy-950">1</span>
+            <label className="mb-3 flex items-center gap-2 text-sm font-bold text-ink">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-royal text-xs font-black text-white">1</span>
               {calculator.step1Label}
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -185,8 +185,8 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                   key={s.id}
                   className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-all ${
                     selectedServices.includes(s.id)
-                      ? 'border-cyan-royal/60 bg-navy-900/70'
-                      : 'border-white/10 bg-navy-900/40 hover:border-cyan-royal/40'
+                      ? 'border-cyan-royal/60 bg-sky-50 shadow-card'
+                      : 'border-slate-200 bg-white hover:border-cyan-royal/40 hover:bg-sky-50'
                   }`}
                 >
                   <input
@@ -196,8 +196,8 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                     className="mt-1 h-4 w-4 rounded accent-cyan-royal"
                   />
                   <div>
-                    <div className="text-sm font-semibold text-white">{s.label}</div>
-                    <div className="text-xs text-slate-400">mulai {idr(s.basePrice)}</div>
+                    <div className="text-sm font-semibold text-ink">{s.label}</div>
+                    <div className="text-xs text-slate-600">mulai {idr(s.basePrice)}</div>
                   </div>
                 </label>
               ))}
@@ -205,8 +205,8 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
           </div>
 
           <div>
-            <label className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-royal text-xs font-black text-navy-950">2</span>
+            <label className="mb-3 flex items-center gap-2 text-sm font-bold text-ink">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-royal text-xs font-black text-white">2</span>
               {calculator.step2Label}
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -217,25 +217,25 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                   onClick={() => setScaleId(s.id)}
                   className={`rounded-xl border px-4 py-3 text-center text-xs font-bold transition-all ${
                     scaleId === s.id
-                      ? 'border-cyan-royal bg-navy-900/80 text-white'
-                      : 'border-white/10 bg-navy-900/40 text-slate-400 hover:border-white/25'
+                      ? 'border-cyan-royal bg-sky-50 text-ink shadow-card'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-sky-300'
                   }`}
                 >
                   <p>{s.label}</p>
-                  <p className="mt-1 text-[10px] font-medium normal-case text-slate-400">{s.description}</p>
+                  <p className="mt-1 text-[10px] font-medium normal-case text-slate-500">{s.description}</p>
                 </button>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-royal text-xs font-black text-navy-950">3</span>
+            <label className="mb-3 flex items-center gap-2 text-sm font-bold text-ink">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-royal text-xs font-black text-white">3</span>
               {calculator.step3Label}
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-slate-400">{fields.name} *</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">{fields.name} *</label>
                 <input
                   type="text"
                   value={form.name}
@@ -245,7 +245,7 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-slate-400">{fields.phone} *</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">{fields.phone} *</label>
                 <input
                   type="tel"
                   value={form.phone}
@@ -256,7 +256,7 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                 {form.phone && <p className="mt-1 text-[10px] text-slate-500">Format WhatsApp: +{form.phone}</p>}
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-slate-400">{fields.email}</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">{fields.email}</label>
                 <input
                   type="email"
                   value={form.email}
@@ -266,7 +266,7 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-slate-400">{fields.businessName}</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">{fields.businessName}</label>
                 <input
                   type="text"
                   value={form.businessName}
@@ -276,7 +276,7 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-slate-400">{fields.businessType}</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">{fields.businessType}</label>
                 <select
                   value={form.businessType}
                   onChange={(e) => updateForm('businessType', e.target.value)}
@@ -290,7 +290,7 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-slate-400">{fields.address}</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">{fields.address}</label>
                 <input
                   type="text"
                   value={form.address}
@@ -300,7 +300,7 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-slate-400">{fields.consultDate}</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">{fields.consultDate}</label>
                 <input
                   type="date"
                   min={todayStr()}
@@ -310,7 +310,7 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-slate-400">{fields.consultTime}</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-600">{fields.consultTime}</label>
                 <select
                   value={form.consultTime}
                   onChange={(e) => updateForm('consultTime', e.target.value)}
@@ -323,7 +323,7 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
                   ))}
                 </select>
                 {isSupabaseConfigured && form.consultDate && bookedSlots.length > 0 && (
-                  <p className="mt-1 text-[10px] text-amber-400">
+                  <p className="mt-1 text-[10px] text-amber-600">
                     {bookedSlots.length} slot pada tanggal ini sudah dibooking pengunjung lain.
                   </p>
                 )}
@@ -333,24 +333,24 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-cyan-royal/40 bg-gradient-to-b from-navy-800 to-navy-950 p-6 shadow-xl sm:p-8 lg:col-span-5">
-          <div className="flex items-center justify-between border-b border-blue-900/60 pb-4">
+        <div className="relative overflow-hidden rounded-2xl border border-cyan-royal/40 bg-gradient-to-b from-white via-sky-50 to-sky-100 p-6 shadow-card sm:p-8 lg:col-span-5">
+          <div className="flex items-center justify-between border-b border-sky-200 pb-4">
             <span className="text-xs font-bold uppercase tracking-wider text-cyan-royal">{calculator.summaryLabel}</span>
             {calculator.turnaround && (
-              <span className="rounded-full border border-gold/30 bg-gold/20 px-2.5 py-0.5 text-[11px] font-semibold text-gold-soft">
+              <span className="rounded-full border border-gold/50 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-gold-deep">
                 {calculator.turnaround}
               </span>
             )}
           </div>
 
           <div className="my-6">
-            <div className="mb-1 text-xs uppercase tracking-wider text-slate-400">{calculator.investmentLabel}</div>
-            <div className="text-3xl font-extrabold text-white sm:text-4xl">{totalDisplay}</div>
+            <div className="mb-1 text-xs uppercase tracking-wider text-slate-600">{calculator.investmentLabel}</div>
+            <div className="text-3xl font-extrabold text-ink sm:text-4xl">{totalDisplay}</div>
             <div className="mt-2 text-xs text-slate-500">{calculator.disclaimer}</div>
           </div>
 
           {calculator.perks?.filter(Boolean).length > 0 && (
-            <div className="mb-8 space-y-2 text-xs text-slate-300">
+            <div className="mb-8 space-y-2 text-xs text-slate-600">
               {calculator.perks.filter(Boolean).map((perk) => (
                 <div key={perk} className="flex items-center gap-2">
                   <CheckCircle2 size={16} className="shrink-0 text-cyan-royal" /> {perk}
@@ -366,25 +366,25 @@ export default function CalculatorPanel({ defaultServices, defaultScale, context
             rel="noopener noreferrer"
             className={`flex w-full items-center justify-center gap-2.5 rounded-xl py-4 text-sm font-bold uppercase tracking-wider text-white shadow-lg transition-transform hover:scale-[1.02] ${
               isValid
-                ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 shadow-emerald-500/25'
-                : 'bg-gradient-to-r from-emerald-500/50 via-teal-500/50 to-cyan-500/50 shadow-none'
+                ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 shadow-emerald-600/25'
+                : 'bg-gradient-to-r from-emerald-600/70 via-teal-600/70 to-cyan-600/70 shadow-none'
             }`}
           >
             <MessageSquare size={18} /> {calculator.waButtonLabel}
           </a>
           {touched && !isValid && (
-            <p className="mt-2 text-center text-[11px] font-semibold text-red-400">
+            <p className="mt-2 text-center text-[11px] font-semibold text-red-600">
               Mohon lengkapi {fields.name} dan {fields.phone} terlebih dahulu.
             </p>
           )}
           {submitState === 'saved' && (
-            <p className="mt-2 text-center text-[11px] font-semibold text-emerald-400">
+            <p className="mt-2 text-center text-[11px] font-semibold text-emerald-600">
               Data Anda tersimpan — tim kami akan segera menghubungi.
             </p>
           )}
 
-          <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] text-slate-400">
-            <Shield size={14} className="text-gold" /> {calculator.trustBadge}
+          <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] text-slate-600">
+            <Shield size={14} className="text-gold-deep" /> {calculator.trustBadge}
           </div>
         </div>
       </div>

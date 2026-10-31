@@ -14,18 +14,18 @@ export default function Modal({ onClose, children, labelledBy }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-navy-950/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby={labelledBy}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="glass-panel relative my-8 w-full max-w-4xl rounded-3xl border border-cyan-royal/30 p-1 shadow-blue-glow">
+      <div className="relative my-8 w-full max-w-4xl rounded-3xl border border-sky-200 bg-white p-1 shadow-blue-glow">
         <button
           type="button"
           onClick={onClose}
           aria-label="Tutup"
-          className="absolute -top-3 -right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-gold/50 bg-navy-900 text-gold-soft shadow-gold-glow hover:bg-navy-800"
+          className="absolute -top-3 -right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-gold/50 bg-white text-gold-deep shadow-gold-glow hover:bg-amber-50"
         >
           <X size={18} />
         </button>

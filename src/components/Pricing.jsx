@@ -18,12 +18,12 @@ export default function Pricing() {
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <span className="section-eyebrow">{pricing.eyebrow}</span>
-          <h2 className="mt-5 text-3xl font-bold text-white sm:text-4xl">{pricing.title}</h2>
-          <p className="mt-4 text-slate-300">{pricing.description}</p>
+          <h2 className="mt-5 text-3xl font-bold text-ink sm:text-4xl">{pricing.title}</h2>
+          <p className="mt-4 text-slate-600">{pricing.description}</p>
         </div>
 
         {pricing.trustBadges?.length > 0 && (
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-400">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-600">
             {pricing.trustBadges.map((badge) => (
               <span key={badge} className="flex items-center gap-1.5">
                 <ShieldCheck size={14} className="text-cyan-royal" /> {badge}
@@ -40,8 +40,8 @@ export default function Pricing() {
               onClick={() => setActiveCategory(cat.slug)}
               className={`rounded-full border px-5 py-2 text-sm font-semibold transition-colors ${
                 activeCategory === cat.slug
-                  ? 'border-gold bg-gold/15 text-gold-soft'
-                  : 'border-white/15 text-slate-400 hover:border-white/30 hover:text-slate-200'
+                  ? 'border-gold bg-amber-50 text-gold-deep shadow-card'
+                  : 'border-slate-200 bg-white/70 text-slate-600 hover:border-sky-300 hover:text-ebtblue'
               }`}
             >
               {cat.label}
@@ -50,9 +50,9 @@ export default function Pricing() {
         </div>
 
         {category.includedBadges?.length > 0 && (
-          <p className="mt-6 text-center text-xs text-slate-400">
+          <p className="mt-6 text-center text-xs text-slate-600">
             {category.intro}{' '}
-            <span className="text-slate-300">{category.includedBadges.join(' • ')}</span>
+            <span className="text-slate-800">{category.includedBadges.join(' • ')}</span>
           </p>
         )}
 
@@ -65,7 +65,7 @@ export default function Pricing() {
         <div className="mt-10 text-center">
           <Link
             to={`/paket/${category.slug}`}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-cyan-royal hover:text-cyan-300"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-cyan-royal hover:text-ebtblue"
           >
             {pricing.detailCtaLabel} ({category.label}) <ArrowRight size={16} />
           </Link>

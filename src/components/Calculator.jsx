@@ -10,8 +10,8 @@ export default function Calculator() {
       <div className="mx-auto max-w-6xl px-5 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <span className="section-eyebrow">{calculator.eyebrow}</span>
-          <h2 className="mt-5 text-3xl font-bold text-white sm:text-4xl">{calculator.title}</h2>
-          <p className="mt-4 text-slate-300">{calculator.description}</p>
+          <h2 className="mt-5 text-3xl font-bold text-ink sm:text-4xl">{calculator.title}</h2>
+          <p className="mt-4 text-slate-600">{calculator.description}</p>
         </div>
 
         <div className="mt-12">

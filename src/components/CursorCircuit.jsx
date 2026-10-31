@@ -68,7 +68,7 @@ export default function CursorCircuit() {
           const dy = nodes[i].y - nodes[j].y
           const dist = Math.hypot(dx, dy)
           if (dist < LINK_DISTANCE) {
-            ctx.strokeStyle = `rgba(103, 232, 249, ${0.12 * (1 - dist / LINK_DISTANCE)})`
+            ctx.strokeStyle = `rgba(14, 165, 233, ${0.18 * (1 - dist / LINK_DISTANCE)})`
             ctx.lineWidth = 1
             ctx.beginPath()
             ctx.moveTo(nodes[i].x, nodes[i].y)
@@ -83,25 +83,25 @@ export default function CursorCircuit() {
           const dist = Math.hypot(dx, dy)
           if (dist < LINK_DISTANCE * 1.4) {
             const t = 1 - dist / (LINK_DISTANCE * 1.4)
-            ctx.strokeStyle = `rgba(212, 175, 55, ${0.5 * t})`
+            ctx.strokeStyle = `rgba(184, 134, 43, ${0.45 * t})`
             ctx.lineWidth = 1.2
             ctx.beginPath()
             ctx.moveTo(nodes[i].x, nodes[i].y)
             ctx.lineTo(mouse.x, mouse.y)
             ctx.stroke()
 
-            ctx.fillStyle = `rgba(103, 232, 249, ${0.6 * t + 0.15})`
+            ctx.fillStyle = `rgba(14, 165, 233, ${0.55 * t + 0.2})`
             ctx.beginPath()
             ctx.arc(nodes[i].x, nodes[i].y, 2, 0, Math.PI * 2)
             ctx.fill()
           } else {
-            ctx.fillStyle = 'rgba(103, 232, 249, 0.25)'
+            ctx.fillStyle = 'rgba(14, 165, 233, 0.3)'
             ctx.beginPath()
             ctx.arc(nodes[i].x, nodes[i].y, 1.5, 0, Math.PI * 2)
             ctx.fill()
           }
         } else {
-          ctx.fillStyle = 'rgba(103, 232, 249, 0.25)'
+          ctx.fillStyle = 'rgba(14, 165, 233, 0.3)'
           ctx.beginPath()
           ctx.arc(nodes[i].x, nodes[i].y, 1.5, 0, Math.PI * 2)
           ctx.fill()
@@ -114,8 +114,8 @@ export default function CursorCircuit() {
           const p0 = trail[i - 1]
           const p1 = trail[i]
           const grad = ctx.createLinearGradient(p0.x, p0.y, p1.x, p1.y)
-          grad.addColorStop(0, `rgba(67, 100, 247, ${0.05 + t * 0.35})`)
-          grad.addColorStop(1, `rgba(103, 232, 249, ${0.1 + t * 0.55})`)
+          grad.addColorStop(0, `rgba(0, 82, 212, ${0.05 + t * 0.35})`)
+          grad.addColorStop(1, `rgba(14, 165, 233, ${0.1 + t * 0.5})`)
           ctx.strokeStyle = grad
           ctx.lineWidth = 1 + t * 2.5
           ctx.lineCap = 'round'
@@ -129,8 +129,8 @@ export default function CursorCircuit() {
         if (head) {
           ctx.beginPath()
           ctx.arc(head.x, head.y, 3.5, 0, Math.PI * 2)
-          ctx.fillStyle = 'rgba(212, 175, 55, 0.9)'
-          ctx.shadowColor = 'rgba(212, 175, 55, 0.9)'
+          ctx.fillStyle = 'rgba(184, 134, 43, 0.9)'
+          ctx.shadowColor = 'rgba(212, 175, 55, 0.6)'
           ctx.shadowBlur = 12
           ctx.fill()
           ctx.shadowBlur = 0

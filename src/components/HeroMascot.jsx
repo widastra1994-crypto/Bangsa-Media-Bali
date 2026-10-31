@@ -22,8 +22,8 @@ export default function HeroMascot() {
   return (
     <div className="relative mx-auto flex w-full max-w-md flex-col items-center">
       <div className="relative aspect-square w-full">
-        <div className="absolute inset-0 animate-spin-slow rounded-full border border-dashed border-gold/20" />
-        <div className="absolute inset-10 rounded-full bg-gradient-to-b from-cyan-royal/15 via-ebtblue/20 to-transparent blur-2xl" />
+        <div className="absolute inset-0 animate-spin-slow rounded-full border border-dashed border-gold/50" />
+        <div className="absolute inset-10 rounded-full bg-gradient-to-b from-sky-200/60 via-sky-100/50 to-transparent blur-2xl" />
 
         <button
           type="button"
@@ -32,10 +32,10 @@ export default function HeroMascot() {
           className="group absolute inset-0 flex cursor-pointer flex-col items-center justify-center focus:outline-none"
         >
           {phraseIndex >= 0 && (
-            <div className="absolute -top-2 z-20 max-w-[240px] scale-100 rounded-2xl border border-cyan-royal/50 bg-navy-900/95 px-4 py-2.5 text-center text-xs text-cyan-100 shadow-blue-glow backdrop-blur-md transition-transform duration-300 sm:text-sm">
-              <span className="font-bold text-gold-soft">Nusa-Bot: </span>
+            <div className="absolute -top-2 z-20 max-w-[240px] scale-100 rounded-2xl border border-sky-200 bg-white/95 px-4 py-2.5 text-center text-xs text-slate-700 shadow-card backdrop-blur-md transition-transform duration-300 sm:text-sm">
+              <span className="font-bold text-gold-deep">Nusa-Bot: </span>
               {SPEECH_PHRASES[phraseIndex]}
-              <div className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r border-cyan-royal/50 bg-navy-900/95" />
+              <div className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r border-sky-200 bg-white/95" />
             </div>
           )}
 
@@ -43,24 +43,24 @@ export default function HeroMascot() {
             <img
               src={customImage}
               alt="Maskot Bangsa Media Bali"
-              className="relative z-10 h-full w-full animate-float rounded-3xl object-contain drop-shadow-[0_15px_30px_rgba(67,100,247,0.35)] transition-transform duration-300 group-hover:scale-[1.03]"
+              className="relative z-10 h-full w-full animate-float rounded-3xl object-contain [filter:drop-shadow(0_0_1.5px_rgba(15,31,61,0.45))_drop-shadow(0_18px_28px_rgba(0,82,212,0.28))] transition-transform duration-300 group-hover:scale-[1.03]"
               onError={() => setImageFailed(true)}
             />
           ) : (
           <svg
             viewBox="0 0 400 480"
-            className="relative z-10 h-full w-full animate-float drop-shadow-[0_15px_30px_rgba(67,100,247,0.35)] transition-transform duration-300 group-hover:scale-[1.03]"
+            className="relative z-10 h-full w-full animate-float [filter:drop-shadow(0_0_1.5px_rgba(15,31,61,0.45))_drop-shadow(0_18px_28px_rgba(0,82,212,0.28))] transition-transform duration-300 group-hover:scale-[1.03]"
             role="img"
             aria-labelledby={`${uid}-title`}
           >
             <title id={`${uid}-title`}>Maskot robot Bangsa Media Bali berbusana adat Bali</title>
             <defs>
               <radialGradient id={`${uid}-glow`} cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#67E8F9" stopOpacity="0.8" />
+                <stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.7" />
                 <stop offset="100%" stopColor="#0052D4" stopOpacity="0" />
               </radialGradient>
               <linearGradient id={`${uid}-chrome`} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#F8FAFC" />
+                <stop offset="0%" stopColor="#E2E8F0" />
                 <stop offset="35%" stopColor="#94A3B8" />
                 <stop offset="70%" stopColor="#334155" />
                 <stop offset="100%" stopColor="#0F172A" />
@@ -93,10 +93,10 @@ export default function HeroMascot() {
 
             {/* TORSO, SABUK & KAMEN (SARUNG) EMAS */}
             <g>
-              <path d="M135 270 Q200 255 265 270 L272 368 Q200 392 128 368 Z" fill={`url(#${uid}-chrome)`} stroke="#67E8F9" strokeWidth="2" />
+              <path d="M135 270 Q200 255 265 270 L272 368 Q200 392 128 368 Z" fill={`url(#${uid}-chrome)`} stroke="#0EA5E9" strokeWidth="2" />
               <path d="M158 268 L172 360 M200 262 L200 372 M242 268 L228 360" stroke="#F8FAFC" strokeWidth="1.2" opacity="0.35" />
 
-              <path d="M145 270 Q200 310 255 270 L260 290 Q200 340 140 290 Z" fill={`url(#${uid}-gold)`} stroke="#FFE9A8" strokeWidth="2" />
+              <path d="M145 270 Q200 310 255 270 L260 290 Q200 340 140 290 Z" fill={`url(#${uid}-gold)`} stroke="#B8862B" strokeWidth="2" />
               <circle cx="200" cy="315" r="7" fill="#67E8F9" className="animate-glow" />
               <circle cx="170" cy="300" r="4" fill="#4364F7" />
               <circle cx="230" cy="300" r="4" fill="#4364F7" />
@@ -105,7 +105,7 @@ export default function HeroMascot() {
               <circle cx="200" cy="345" r="14" fill={`url(#${uid}-neon)`} />
               <polygon points="200,334 209,351 191,351" fill="#ffffff" opacity="0.85" />
 
-              <rect x="150" y="368" width="100" height="14" rx="4" fill={`url(#${uid}-gold)`} stroke="#FFE9A8" strokeWidth="1.5" />
+              <rect x="150" y="368" width="100" height="14" rx="4" fill={`url(#${uid}-gold)`} stroke="#B8862B" strokeWidth="1.5" />
               <circle cx="200" cy="375" r="8" fill="#050B1F" stroke="#FFF3B0" strokeWidth="1.5" />
 
               <path d="M128 380 Q200 405 272 380 L280 445 Q200 470 120 445 Z" fill="#0A1330" stroke={`url(#${uid}-gold)`} strokeWidth="2.5" />
@@ -129,10 +129,10 @@ export default function HeroMascot() {
 
             {/* PAULDRON (BAHU EMAS) */}
             <g>
-              <circle cx="112" cy="262" r="30" fill={`url(#${uid}-gold)`} stroke="#FFF3B0" strokeWidth="2" />
+              <circle cx="112" cy="262" r="30" fill={`url(#${uid}-gold)`} stroke="#B8862B" strokeWidth="2" />
               <circle cx="112" cy="262" r="30" fill="none" stroke={`url(#${uid}-goldEdge)`} strokeWidth="1.5" opacity="0.7" />
               <circle cx="112" cy="262" r="8" fill="#050B1F" stroke="#67E8F9" strokeWidth="1.5" />
-              <circle cx="288" cy="262" r="30" fill={`url(#${uid}-gold)`} stroke="#FFF3B0" strokeWidth="2" />
+              <circle cx="288" cy="262" r="30" fill={`url(#${uid}-gold)`} stroke="#B8862B" strokeWidth="2" />
               <circle cx="288" cy="262" r="30" fill="none" stroke={`url(#${uid}-goldEdge)`} strokeWidth="1.5" opacity="0.7" />
               <circle cx="288" cy="262" r="8" fill="#050B1F" stroke="#67E8F9" strokeWidth="1.5" />
             </g>
@@ -155,15 +155,15 @@ export default function HeroMascot() {
 
               <path d="M188 205 Q200 213 212 205" stroke="#4364F7" strokeWidth="3" strokeLinecap="round" fill="none" />
 
-              <path d="M135 140 Q200 115 265 140 L268 122 Q200 95 132 122 Z" fill={`url(#${uid}-gold)`} stroke="#FFE9A8" strokeWidth="2" />
+              <path d="M135 140 Q200 115 265 140 L268 122 Q200 95 132 122 Z" fill={`url(#${uid}-gold)`} stroke="#B8862B" strokeWidth="2" />
               <circle cx="160" cy="128" r="3" fill="#050B1F" />
               <line x1="163" y1="128" x2="185" y2="128" stroke="#050B1F" strokeWidth="2" />
               <circle cx="240" cy="128" r="3" fill="#050B1F" />
               <line x1="237" y1="128" x2="215" y2="128" stroke="#050B1F" strokeWidth="2" />
 
-              <path d="M188 118 Q195 60 216 45 Q212 78 206 118 Z" fill={`url(#${uid}-gold)`} stroke="#FFF3B0" strokeWidth="2" />
-              <line x1="216" y1="45" x2="225" y2="30" stroke="#67E8F9" strokeWidth="3" strokeLinecap="round" />
-              <circle cx="226" cy="28" r="4" fill="#67E8F9" className="animate-glow" />
+              <path d="M188 118 Q195 60 216 45 Q212 78 206 118 Z" fill={`url(#${uid}-gold)`} stroke="#B8862B" strokeWidth="2" />
+              <line x1="216" y1="45" x2="225" y2="30" stroke="#0EA5E9" strokeWidth="3" strokeLinecap="round" />
+              <circle cx="226" cy="28" r="4" fill="#0EA5E9" className="animate-glow" />
 
               <g transform="translate(252, 142) scale(0.65)">
                 <circle cx="20" cy="20" r="10" fill="#D4AF37" />
@@ -180,15 +180,15 @@ export default function HeroMascot() {
               <path d="M292 275 Q345 250 335 210" stroke={`url(#${uid}-chrome)`} strokeWidth="22" strokeLinecap="round" fill="none" />
               <circle cx="335" cy="205" r="14" fill={`url(#${uid}-chrome)`} stroke="#4364F7" strokeWidth="2" />
               <path d="M325 195 L330 165 M336 192 L345 162 M345 196 L358 170 M320 198 L312 185" stroke="#4364F7" strokeWidth="4" strokeLinecap="round" />
-              <circle cx="335" cy="190" r="5" fill="#67E8F9" className="animate-glow" />
+              <circle cx="335" cy="190" r="5" fill="#0EA5E9" className="animate-glow" />
             </g>
           </svg>
           )}
         </button>
       </div>
 
-      <div className="mt-1 flex items-center gap-2 rounded-full border border-cyan-royal/40 bg-navy-900/80 px-4 py-1.5 text-xs font-semibold text-cyan-200 shadow-blue-glow">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+      <div className="mt-1 flex items-center gap-2 rounded-full border border-sky-200 bg-white/90 px-4 py-1.5 text-xs font-semibold text-ebtblue shadow-card">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
         Klik maskot untuk berinteraksi
       </div>
     </div>

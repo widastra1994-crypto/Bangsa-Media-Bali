@@ -31,7 +31,7 @@ function LangToggle({ compact }) {
     <div
       role="group"
       aria-label="Pilih bahasa / Select language"
-      className={`flex items-center gap-0.5 rounded-full border border-white/15 bg-white/5 p-0.5 ${compact ? 'w-full' : ''}`}
+      className={`flex items-center gap-0.5 rounded-full border border-slate-200 bg-slate-50 p-0.5 ${compact ? 'w-full' : ''}`}
     >
       {['id', 'en'].map((code) => (
         <button
@@ -40,7 +40,7 @@ function LangToggle({ compact }) {
           onClick={() => setLang(code)}
           aria-pressed={lang === code}
           className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${compact ? 'flex-1' : ''} ${
-            lang === code ? 'bg-gold text-navy-950' : 'text-slate-400 hover:text-slate-200'
+            lang === code ? 'bg-gold text-navy-950' : 'text-slate-500 hover:text-ink'
           }`}
         >
           {code.toUpperCase()}
@@ -65,8 +65,8 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ${
-        scrolled ? 'border-blue-900/40 bg-navy-950/80 shadow-lg shadow-black/30 backdrop-blur-xl' : 'border-transparent bg-transparent'
+      className={`fixed inset-x-0 top-0 z-50 border-b bg-white/95 backdrop-blur-xl transition-all duration-300 ${
+        scrolled ? 'border-slate-200 shadow-sm' : 'border-slate-100'
       }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
@@ -79,7 +79,7 @@ export default function Navbar() {
             <li key={item.id}>
               <NavLink
                 item={item}
-                className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-slate-300 transition-colors hover:text-cyan-royal"
+                className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-slate-600 transition-colors hover:text-ebtblue"
               />
             </li>
           ))}
@@ -95,7 +95,7 @@ export default function Navbar() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="glass-panel rounded-lg p-2 text-slate-200 lg:hidden"
+          className="rounded-lg border border-slate-200 bg-white p-2 text-ink shadow-sm lg:hidden"
           aria-label="Buka menu"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
@@ -103,11 +103,11 @@ export default function Navbar() {
       </nav>
 
       {open && (
-        <div className="glass-panel mx-4 mb-4 rounded-2xl px-5 py-4 lg:hidden">
+        <div className="mx-4 mb-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-card lg:hidden">
           <ul className="flex flex-col gap-4">
             {primaryMenu.map((item) => (
               <li key={item.id}>
-                <NavLink item={item} onClick={() => setOpen(false)} className="block text-sm font-medium text-slate-200 hover:text-gold-soft" />
+                <NavLink item={item} onClick={() => setOpen(false)} className="block text-sm font-medium text-slate-700 hover:text-ebtblue" />
               </li>
             ))}
             <li>

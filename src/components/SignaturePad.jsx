@@ -32,7 +32,7 @@ export default function SignaturePad({ onChange, height = 160 }) {
     const { x, y } = getPos(e)
     ctx.lineWidth = 2.2
     ctx.lineCap = 'round'
-    ctx.strokeStyle = '#0f172a'
+    ctx.strokeStyle = '#0f1f3d'
     ctx.lineTo(x, y)
     ctx.stroke()
   }
@@ -54,7 +54,7 @@ export default function SignaturePad({ onChange, height = 160 }) {
 
   return (
     <div>
-      <div className="relative rounded-xl border-2 border-dashed border-white/20 bg-white">
+      <div className="relative rounded-xl border-2 border-dashed border-slate-300 bg-white">
         <canvas
           ref={canvasRef}
           width={500}
@@ -71,7 +71,7 @@ export default function SignaturePad({ onChange, height = 160 }) {
         />
         {!hasDrawn && <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-slate-400">Tanda tangan di sini</p>}
       </div>
-      <button type="button" onClick={clear} className="mt-2 flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-400">
+      <button type="button" onClick={clear} className="mt-2 flex items-center gap-1.5 text-xs text-slate-600 hover:text-red-600">
         <Eraser size={13} /> Hapus & Ulangi
       </button>
     </div>

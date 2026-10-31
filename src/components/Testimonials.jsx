@@ -37,32 +37,32 @@ export default function Testimonials() {
   if (!testimonials?.items?.length) return null
 
   return (
-    <section id="testimoni" className="relative border-t border-blue-900/40 py-20 lg:py-28">
+    <section id="testimoni" className="relative border-t border-slate-200 py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <span className="section-eyebrow">{testimonials.eyebrow}</span>
-          <h2 className="mt-5 text-3xl font-bold text-white sm:text-4xl">{testimonials.title}</h2>
-          <p className="mt-4 text-slate-300">{testimonials.description}</p>
+          <h2 className="mt-5 text-3xl font-bold text-ink sm:text-4xl">{testimonials.title}</h2>
+          <p className="mt-4 text-slate-600">{testimonials.description}</p>
         </div>
 
         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
           {testimonials.items.map((t, index) => (
             <div
               key={t.id}
-              className="relative flex flex-col rounded-2xl border border-slate-800 bg-navy-900/50 p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-gold/50"
+              className="relative flex flex-col rounded-2xl border border-sky-100 bg-white/80 p-6 shadow-card transition-all duration-300 hover:-translate-y-1.5 hover:border-gold/50"
             >
-              <Quote className="absolute right-5 top-5 text-gold/20" size={36} />
+              <Quote className="absolute right-5 top-5 text-gold/30" size={36} />
               <div className="flex items-center gap-0.5">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} size={14} className={i < (t.rating || 5) ? 'fill-gold text-gold' : 'text-slate-700'} />
+                  <Star key={i} size={14} className={i < (t.rating || 5) ? 'fill-gold text-gold' : 'text-slate-300'} />
                 ))}
               </div>
-              <p className="relative z-10 mt-4 flex-1 text-sm leading-relaxed text-slate-300">"{t.text}"</p>
-              <div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-4">
+              <p className="relative z-10 mt-4 flex-1 text-sm leading-relaxed text-slate-600">"{t.text}"</p>
+              <div className="mt-6 flex items-center gap-3 border-t border-slate-200 pt-4">
                 <Avatar name={t.name} avatar={t.avatar} index={index} />
                 <div>
-                  <p className="text-sm font-bold text-white">{t.name}</p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-sm font-bold text-ink">{t.name}</p>
+                  <p className="text-xs text-slate-500">
                     {t.role}
                     {t.company ? `, ${t.company}` : ''}
                   </p>

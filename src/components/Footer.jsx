@@ -7,13 +7,13 @@ export default function Footer() {
   const { footer, nav, contact, services } = content
 
   return (
-    <footer className="border-t border-blue-950 bg-navy-950/90 pb-12 pt-16 text-sm text-slate-400">
+    <footer className="border-t border-slate-200 bg-white pb-12 pt-16 text-sm text-slate-600">
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
-        <div className="grid grid-cols-1 gap-10 border-b border-slate-900 pb-12 md:grid-cols-12">
+        <div className="grid grid-cols-1 gap-10 border-b border-slate-200 pb-12 md:grid-cols-12">
           <div className="md:col-span-5">
             <img src={logoFull} alt="Bangsa Media Bali" className="mb-4 h-9 w-auto object-contain" />
-            <p className="mb-6 max-w-sm text-xs leading-relaxed text-slate-400">{footer.tagline}</p>
-            <div className="space-y-1.5 text-xs text-slate-400">
+            <p className="mb-6 max-w-sm text-xs leading-relaxed text-slate-600">{footer.tagline}</p>
+            <div className="space-y-1.5 text-xs text-slate-600">
               <div className="flex items-center gap-2">
                 <MapPin size={16} className="text-cyan-royal" /> {contact.address}
               </div>
@@ -24,11 +24,11 @@ export default function Footer() {
           </div>
 
           <div className="md:col-span-3">
-            <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-white">{footer.servicesHeading}</h4>
+            <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-ink">{footer.servicesHeading}</h4>
             <ul className="space-y-2.5 text-xs">
               {services.items.map((item) => (
                 <li key={item.id}>
-                  <a href="/#layanan" className="transition-colors hover:text-cyan-royal">
+                  <a href="/#layanan" className="transition-colors hover:text-ebtblue">
                     {item.title}
                   </a>
                 </li>
@@ -37,10 +37,10 @@ export default function Footer() {
           </div>
 
           <div className="md:col-span-4">
-            <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-white">{footer.philosophyHeading}</h4>
-            <p className="mb-4 text-xs leading-relaxed text-slate-400">{footer.philosophyText}</p>
-            <div className="flex items-center gap-2.5 rounded-xl border border-blue-900/40 bg-navy-900/80 p-3.5 text-xs text-gold-soft/90">
-              <Check size={16} className="text-gold" />
+            <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-ink">{footer.philosophyHeading}</h4>
+            <p className="mb-4 text-xs leading-relaxed text-slate-600">{footer.philosophyText}</p>
+            <div className="flex items-center gap-2.5 rounded-xl border border-gold/50 bg-amber-50 p-3.5 text-xs text-gold-deep">
+              <Check size={16} className="text-gold-deep" />
               <span>{contact.hours}</span>
             </div>
           </div>
@@ -54,19 +54,19 @@ export default function Footer() {
             {nav.menu
               .filter((item) => !item.primary)
               .map((item) => (
-                <a key={item.id} href={item.href} className="hover:text-slate-300">
+                <a key={item.id} href={item.href} className="hover:text-ebtblue">
                   {item.label}
                 </a>
               ))}
             {footer.socials.map((s) => (
-              <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-slate-300">
+              <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-ebtblue">
                 {s.label}
               </a>
             ))}
-            <a href="/portal" className="hover:text-slate-300">
+            <a href="/portal" className="hover:text-ebtblue">
               Portal Klien
             </a>
-            <a href="/admin" className="text-slate-600 hover:text-gold-soft">
+            <a href="/admin" className="text-slate-400 hover:text-gold-deep">
               Admin
             </a>
           </div>

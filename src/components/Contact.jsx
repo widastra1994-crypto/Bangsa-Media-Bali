@@ -12,41 +12,41 @@ export default function Contact() {
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <span className="section-eyebrow">{contact.eyebrow}</span>
-          <h2 className="mt-5 text-3xl font-bold text-white sm:text-4xl">{contact.title}</h2>
-          <p className="mt-4 text-slate-300">{contact.description}</p>
+          <h2 className="mt-5 text-3xl font-bold text-ink sm:text-4xl">{contact.title}</h2>
+          <p className="mt-4 text-slate-600">{contact.description}</p>
         </div>
 
         <div className="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-5">
           <div className="glass-panel space-y-5 rounded-2xl p-6 lg:col-span-2">
             <div className="flex items-start gap-3">
-              <MapPin className="mt-0.5 shrink-0 text-gold" size={20} />
+              <MapPin className="mt-0.5 shrink-0 text-gold-deep" size={20} />
               <div>
-                <p className="text-sm font-semibold text-white">{contact.labels.address}</p>
-                <p className="text-sm text-slate-400">{contact.address}</p>
+                <p className="text-sm font-semibold text-ink">{contact.labels.address}</p>
+                <p className="text-sm text-slate-600">{contact.address}</p>
                 <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-semibold text-cyan-royal hover:underline">
                   {contact.labels.mapsLink}
                 </a>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Phone className="mt-0.5 shrink-0 text-gold" size={20} />
+              <Phone className="mt-0.5 shrink-0 text-gold-deep" size={20} />
               <div>
-                <p className="text-sm font-semibold text-white">{contact.labels.phone}</p>
-                <p className="text-sm text-slate-400">{contact.phone}</p>
+                <p className="text-sm font-semibold text-ink">{contact.labels.phone}</p>
+                <p className="text-sm text-slate-600">{contact.phone}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Mail className="mt-0.5 shrink-0 text-gold" size={20} />
+              <Mail className="mt-0.5 shrink-0 text-gold-deep" size={20} />
               <div>
-                <p className="text-sm font-semibold text-white">{contact.labels.email}</p>
-                <p className="text-sm text-slate-400">{contact.email}</p>
+                <p className="text-sm font-semibold text-ink">{contact.labels.email}</p>
+                <p className="text-sm text-slate-600">{contact.email}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Clock className="mt-0.5 shrink-0 text-gold" size={20} />
+              <Clock className="mt-0.5 shrink-0 text-gold-deep" size={20} />
               <div>
-                <p className="text-sm font-semibold text-white">{contact.labels.hours}</p>
-                <p className="text-sm text-slate-400">{contact.hours}</p>
+                <p className="text-sm font-semibold text-ink">{contact.labels.hours}</p>
+                <p className="text-sm text-slate-600">{contact.hours}</p>
               </div>
             </div>
           </div>

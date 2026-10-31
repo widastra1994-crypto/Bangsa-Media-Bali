@@ -3,9 +3,9 @@ import { Check, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 
 const STATUS_RING = {
-  todo: 'border-slate-500/50 text-transparent',
-  in_progress: 'border-amber-400/70 bg-amber-500/15 text-amber-400',
-  done: 'border-emerald-400/70 bg-emerald-500/15 text-emerald-400',
+  todo: 'border-slate-300 text-transparent',
+  in_progress: 'border-amber-400 bg-amber-50 text-amber-600',
+  done: 'border-emerald-400 bg-emerald-50 text-emerald-600',
 }
 
 // Tampilan progres read-only untuk klien -- checklist yang sama dengan yang
@@ -40,15 +40,15 @@ export default function ProjectProgress({ projectId }) {
   const pct = Math.round((done / tasks.length) * 100)
 
   return (
-    <div className="mt-3 border-t border-white/10 pt-3">
+    <div className="mt-3 border-t border-slate-200 pt-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Progres Pengerjaan</p>
-        <p className="text-[11px] font-bold text-gold-soft">
+        <p className="text-[11px] font-bold text-gold-deep">
           {pct}% <span className="font-normal text-slate-500">({done}/{tasks.length})</span>
         </p>
       </div>
-      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-        <div className="h-full rounded-full bg-gradient-to-r from-cyan-royal to-gold-soft transition-all duration-500" style={{ width: `${pct}%` }} />
+      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+        <div className="h-full rounded-full bg-gradient-to-r from-cyan-royal to-gold transition-all duration-500" style={{ width: `${pct}%` }} />
       </div>
       <div className="mt-2 space-y-1">
         {tasks.map((task) => (
@@ -57,7 +57,7 @@ export default function ProjectProgress({ projectId }) {
               {task.status === 'in_progress' && <Loader2 size={9} className="animate-spin" />}
               {task.status === 'done' && <Check size={9} strokeWidth={3} />}
             </span>
-            <span className={`truncate text-[11px] ${task.status === 'done' ? 'text-slate-500 line-through' : 'text-slate-300'}`}>{task.title}</span>
+            <span className={`truncate text-[11px] ${task.status === 'done' ? 'text-slate-500 line-through' : 'text-slate-600'}`}>{task.title}</span>
           </div>
         ))}
       </div>

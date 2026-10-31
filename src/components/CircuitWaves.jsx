@@ -15,16 +15,16 @@ export default function CircuitWaves({ className = '', opacity = 1 }) {
       <defs>
         <linearGradient id={`${uid}-line1`} x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#4364F7" stopOpacity="0" />
-          <stop offset="45%" stopColor="#67E8F9" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#D4AF37" stopOpacity="0" />
+          <stop offset="45%" stopColor="#0EA5E9" stopOpacity="0.7" />
+          <stop offset="100%" stopColor="#B8862B" stopOpacity="0" />
         </linearGradient>
         <linearGradient id={`${uid}-line2`} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#D4AF37" stopOpacity="0" />
-          <stop offset="55%" stopColor="#4364F7" stopOpacity="0.7" />
-          <stop offset="100%" stopColor="#67E8F9" stopOpacity="0" />
+          <stop offset="0%" stopColor="#B8862B" stopOpacity="0" />
+          <stop offset="55%" stopColor="#0052D4" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="#0EA5E9" stopOpacity="0" />
         </linearGradient>
         <filter id={`${uid}-glow`} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feGaussianBlur stdDeviation="3" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -56,7 +56,7 @@ export default function CircuitWaves({ className = '', opacity = 1 }) {
         {[
           [250, 232], [650, 300], [1050, 214], [750, 360], [1300, 340], [420, 214], [1250, 180],
         ].map(([cx, cy], i) => (
-          <circle key={i} cx={cx} cy={cy} r={i % 3 === 0 ? 4 : 2.5} fill={i % 2 === 0 ? '#67E8F9' : '#D4AF37'} />
+          <circle key={i} cx={cx} cy={cy} r={i % 3 === 0 ? 4 : 2.5} fill={i % 2 === 0 ? '#0EA5E9' : '#B8862B'} />
         ))}
       </g>
     </svg>

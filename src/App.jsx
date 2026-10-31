@@ -14,7 +14,7 @@ import CursorCircuit from './components/CursorCircuit'
 
 function App() {
   return (
-    <div className="min-h-screen bg-nusatech-gradient">
+    <div className="min-h-screen bg-site-gradient text-slate-700">
       <CursorCircuit />
       <Navbar />
       <main>
