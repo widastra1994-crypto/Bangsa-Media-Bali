@@ -8,6 +8,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
 export function useUserRole() {
   const [role, setRole] = useState(null)
   const [menuAccess, setMenuAccess] = useState(null)
+  const [account, setAccount] = useState({ name: '', email: '' })
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(isSupabaseConfigured)
 
@@ -33,7 +34,7 @@ export function useUserRole() {
         setLoading(false)
         return
       }
-      const { data, error: err } = await supabase.from('profiles').select('role, menu_access').eq('id', user.id).maybeSingle()
+      const { data, error: err } = await supabase.from('profiles').select('role, menu_access, name').eq('id', user.id).maybeSingle()
       if (isStale()) return
       if (err || !data) {
         // Gagal-tertutup: jangan menebak role (dulu jatuh ke 'viewer' dengan
@@ -44,6 +45,7 @@ export function useUserRole() {
       } else {
         setRole(data.role)
         setMenuAccess(data.menu_access ?? null)
+        setAccount({ name: data.name || '', email: user.email || '' })
         setError(null)
       }
       setLoading(false)
@@ -63,5 +65,5 @@ export function useUserRole() {
     }
   }, [])
 
-  return { role, menuAccess, error, loading, isOwnerOrAdmin: role === 'owner' || role === 'admin' }
+  return { role, menuAccess, account, error, loading, isOwnerOrAdmin: role === 'owner' || role === 'admin' }
 }

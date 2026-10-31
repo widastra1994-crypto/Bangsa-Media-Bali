@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Lock, Mail } from 'lucide-react'
 import { adminSignIn } from '../context/ContentContext'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
-import MascotIcon from '../components/MascotIcon'
+import logoFull from '../assets/logo-full.png'
+import './admin-theme.css'
 
 export default function AdminLogin({ onSuccess }) {
   const [email, setEmail] = useState('')
@@ -24,12 +25,15 @@ export default function AdminLogin({ onSuccess }) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-nusatech-gradient px-5">
-      <form onSubmit={handleSubmit} className="glass-panel w-full max-w-sm rounded-3xl p-8 shadow-blue-glow">
+    <div className="admin-theme admin-login-root flex min-h-screen items-center justify-center px-5 py-10">
+      <div className="admin-login-bg" aria-hidden="true" />
+      <div className="admin-login-blob admin-login-blob-a" aria-hidden="true" />
+      <div className="admin-login-blob admin-login-blob-b" aria-hidden="true" />
+      <form onSubmit={handleSubmit} className="admin-login-card w-full max-w-sm p-8">
         <div className="flex flex-col items-center text-center">
-          <MascotIcon variant="assistant" size={72} />
-          <h1 className="mt-4 text-xl font-bold text-white">Admin CMS Bangsa Media Bali</h1>
-          <p className="mt-1 text-sm text-slate-400">Masuk untuk mengelola konten website.</p>
+          <img src={logoFull} alt="Bangsa Media Bali" className="h-14 w-auto" />
+          <h1 className="mt-6 text-[22px] font-bold text-white">Masuk ke CMS Admin</h1>
+          <p className="mt-1 text-sm text-slate-400">Kelola website &amp; akunting Bangsa Media Bali.</p>
         </div>
 
         {isSupabaseConfigured && (

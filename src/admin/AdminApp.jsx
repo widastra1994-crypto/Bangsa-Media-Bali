@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { ExternalLink, LogOut, ShieldAlert, Menu, X, ChevronDown, Lock } from 'lucide-react'
+import { ExternalLink, LogOut, ShieldAlert, Menu, X, ChevronDown, ChevronRight, Lock } from 'lucide-react'
 import { adminSignOut, useAdminSession } from '../context/ContentContext'
 import { useUserRole } from './useUserRole'
 import { visibleGroupsFor } from './menuConfig'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
 import AdminLogin from './AdminLogin'
-import MascotIcon from '../components/MascotIcon'
+import logoFull from '../assets/logo-full.png'
+import './admin-theme.css'
 import BrandNavEditor from './editors/BrandNavEditor'
 import HeroEditor from './editors/HeroEditor'
 import ServicesEditor from './editors/ServicesEditor'
@@ -76,46 +77,48 @@ const TAB_COMPONENTS = {
   'acc-users': UserManagement,
 }
 
+const ROLE_NAME = { owner: 'Owner', admin: 'Admin', staff: 'Staff', viewer: 'Viewer' }
+
+function Brand() {
+  return (
+    <div>
+      <img src={logoFull} alt="Bangsa Media Bali" className="h-10 w-auto" />
+      <p className="adm-eyebrow mt-2 !text-[10.5px]">CMS Admin &amp; Akunting</p>
+    </div>
+  )
+}
+
 function SidebarNav({ visibleGroups, currentTabId, onSelect, collapsed, onToggleGroup }) {
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className="flex flex-col gap-4 px-3 py-4">
       {visibleGroups.map((group) => {
-        const GroupIcon = group.icon
         const isCollapsed = collapsed[group.group]
         return (
-          <div key={group.group} className="mb-1">
+          <div key={group.group}>
             <button
               type="button"
               onClick={() => onToggleGroup(group.group)}
-              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-white/5"
+              className="adm-eyebrow mb-1.5 flex w-full items-center justify-between px-2 text-left hover:text-[color:var(--ink)]"
+              aria-expanded={!isCollapsed}
             >
-              <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <GroupIcon size={13} /> {group.group}
-              </span>
-              <ChevronDown size={14} className={`text-slate-600 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+              {group.group}
+              <ChevronDown size={13} className={`transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
             </button>
             {!isCollapsed && (
-              <div className="mt-0.5 flex flex-col gap-0.5">
+              <ul className="flex flex-col gap-0.5">
                 {group.tabs.map((tab) => {
                   const TabIcon = tab.icon
                   const active = currentTabId === tab.id
                   return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => onSelect(tab.id)}
-                      className={`group flex items-center gap-2.5 rounded-lg border-l-2 px-3 py-2.5 text-left text-sm font-medium transition-all ${
-                        active
-                          ? 'border-gold bg-gold/10 text-gold-soft'
-                          : 'border-transparent text-slate-400 hover:border-white/20 hover:bg-white/5 hover:text-slate-200'
-                      }`}
-                    >
-                      <TabIcon size={16} className={active ? 'text-gold-soft' : 'text-slate-500 group-hover:text-slate-300'} />
-                      <span className="truncate">{tab.label}</span>
-                    </button>
+                    <li key={tab.id}>
+                      <button type="button" onClick={() => onSelect(tab.id)} aria-current={active ? 'page' : undefined} className="adm-nav-item">
+                        <TabIcon size={17} className="adm-nav-icon shrink-0" />
+                        <span className="truncate">{tab.label}</span>
+                      </button>
+                    </li>
                   )
                 })}
-              </div>
+              </ul>
             )}
           </div>
         )
@@ -124,9 +127,37 @@ function SidebarNav({ visibleGroups, currentTabId, onSelect, collapsed, onToggle
   )
 }
 
+function AccountFooter({ account, role, onLogout }) {
+  const display = account.name || account.email || 'Pengguna'
+  return (
+    <div className="flex items-center gap-2.5 border-t border-[#e1e9f3] px-5 py-3">
+      <span className="adm-avatar grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold uppercase text-white ring-2 ring-[#e1e9f3]">
+        {display.slice(0, 2)}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-medium text-[color:var(--ink)]">{display}</p>
+        <p className="truncate text-[11.5px] text-[color:var(--muted)]">{ROLE_NAME[role] || role}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onLogout}
+        title="Keluar"
+        aria-label="Keluar"
+        className="rounded-md p-1.5 text-[color:var(--muted)] transition-colors hover:bg-[#edf4fc] hover:text-[color:var(--ink)]"
+      >
+        <LogOut size={16} />
+      </button>
+    </div>
+  )
+}
+
+function CenteredScreen({ children }) {
+  return <div className="admin-theme flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">{children}</div>
+}
+
 export default function AdminApp() {
   const { authed: sessionAuthed, loading } = useAdminSession()
-  const { role, menuAccess, error: roleError, loading: roleLoading } = useUserRole()
+  const { role, menuAccess, account, error: roleError, loading: roleLoading } = useUserRole()
   // Override lokal untuk umpan balik instan: mode fallback (tanpa Supabase) tidak
   // reaktif sendiri terhadap login/logout, jadi status efektifnya dipandu dari sini
   // sampai sessionAuthed dari hook menyusul (selalu terjadi pada mode Supabase).
@@ -145,9 +176,9 @@ export default function AdminApp() {
 
   if (loading || (isSupabaseConfigured && roleLoading)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-nusatech-gradient text-sm text-slate-400">
-        Memuat sesi admin...
-      </div>
+      <CenteredScreen>
+        <p className="text-sm text-slate-400">Memuat sesi admin...</p>
+      </CenteredScreen>
     )
   }
 
@@ -165,7 +196,7 @@ export default function AdminApp() {
 
   if (isSupabaseConfigured && roleError) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-nusatech-gradient px-5 text-center text-slate-100">
+      <CenteredScreen>
         <ShieldAlert size={40} className="text-amber-400" />
         <p className="text-lg font-bold">Profil akun gagal dimuat.</p>
         <p className="max-w-sm text-sm text-slate-400">{roleError}</p>
@@ -177,7 +208,7 @@ export default function AdminApp() {
             <LogOut size={14} /> Keluar
           </button>
         </div>
-      </div>
+      </CenteredScreen>
     )
   }
 
@@ -185,16 +216,16 @@ export default function AdminApp() {
   // menebak -- dulu jatuh ke 'owner' sehingga staf sekilas melihat semua menu.
   if (isSupabaseConfigured && !role) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-nusatech-gradient text-sm text-slate-400">
-        Memuat sesi admin...
-      </div>
+      <CenteredScreen>
+        <p className="text-sm text-slate-400">Memuat sesi admin...</p>
+      </CenteredScreen>
     )
   }
 
   // Akun role 'client' (portal) tidak pernah dimaksudkan membuka CMS admin ini.
   if (role === 'client') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-nusatech-gradient px-5 text-center text-slate-100">
+      <CenteredScreen>
         <ShieldAlert size={40} className="text-amber-400" />
         <p className="text-lg font-bold">Akun ini bukan akun admin.</p>
         <p className="max-w-sm text-sm text-slate-400">
@@ -203,7 +234,7 @@ export default function AdminApp() {
         <button type="button" onClick={handleLogout} className="btn-secondary !px-4 !py-2 text-xs">
           <LogOut size={14} /> Keluar
         </button>
-      </div>
+      </CenteredScreen>
     )
   }
 
@@ -222,76 +253,88 @@ export default function AdminApp() {
     setMobileMenuOpen(false)
   }
 
+  const currentGroup = visibleGroups.find((g) => g.tabs.some((t) => t.id === currentTabId))
+  const navProps = { visibleGroups, currentTabId, onSelect: selectTab, collapsed: collapsedGroups, onToggleGroup: toggleGroup }
+
   return (
-    <div className="min-h-screen bg-nusatech-gradient text-slate-100">
-      <header className="glass-panel sticky top-0 z-40 flex items-center justify-between px-5 py-3 lg:px-8">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="rounded-lg p-2 text-slate-300 hover:bg-white/5 lg:hidden"
-            aria-label="Buka menu"
-          >
-            <Menu size={20} />
-          </button>
-          <MascotIcon variant="assistant" size={40} className="hidden sm:block" />
-          <div>
-            <p className="text-sm font-bold text-white">CMS Admin Bangsa Media Bali</p>
-            <p className="text-[11px] text-slate-400">
-              {effectiveRole === 'owner' ? 'Owner' : effectiveRole === 'admin' ? 'Admin' : effectiveRole === 'staff' ? 'Staff' : 'Viewer'} &bull; Kelola website & akunting
-            </p>
-          </div>
+    <div className="admin-theme flex min-h-screen">
+      {/* Sidebar desktop: putih, setinggi layar, scroll sendiri */}
+      <aside className="adm-sidebar sticky top-0 hidden h-screen w-[256px] shrink-0 flex-col border-r shadow-[4px_0_24px_-16px_rgba(21,33,58,0.25)] lg:flex">
+        <div className="mx-3 mt-4 border-b border-[#e1e9f3] px-2 pb-4">
+          <Brand />
         </div>
-        <div className="flex items-center gap-2">
-          <GlobalSearch onNavigate={selectTab} allowedTabIds={allowedTabIds} />
-          <NotificationCenter onNavigate={selectTab} allowedTabIds={allowedTabIds} />
-          <a href="/" target="_blank" rel="noopener noreferrer" className="btn-secondary !px-3 !py-2 text-xs">
-            <ExternalLink size={14} /> <span className="hidden sm:inline">Lihat Website</span>
-          </a>
-          <button type="button" onClick={handleLogout} className="btn-secondary !px-3 !py-2 text-xs">
-            <LogOut size={14} /> <span className="hidden sm:inline">Keluar</span>
-          </button>
+        <div className="flex-1 overflow-y-auto">
+          <SidebarNav {...navProps} />
         </div>
-      </header>
+        <AccountFooter account={account} role={effectiveRole} onLogout={handleLogout} />
+      </aside>
 
-      <div className="mx-auto flex max-w-7xl gap-6 px-5 py-6 lg:px-8">
-        {/* Sidebar desktop: sticky, scroll independen dari konten utama */}
-        <aside className="hidden lg:block lg:w-72 lg:shrink-0">
-          <div className="glass-panel sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl p-3">
-            <SidebarNav visibleGroups={visibleGroups} currentTabId={currentTabId} onSelect={selectTab} collapsed={collapsedGroups} onToggleGroup={toggleGroup} />
-          </div>
-        </aside>
-
-        {/* Sidebar mobile: drawer geser dari kiri dengan overlay */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-            <div className="glass-panel absolute inset-y-0 left-0 w-[85%] max-w-xs overflow-y-auto p-3 shadow-2xl">
-              <div className="mb-2 flex items-center justify-between px-2 py-1">
-                <span className="text-sm font-bold text-white">Menu</span>
-                <button type="button" onClick={() => setMobileMenuOpen(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5" aria-label="Tutup menu">
-                  <X size={18} />
-                </button>
-              </div>
-              <SidebarNav visibleGroups={visibleGroups} currentTabId={currentTabId} onSelect={selectTab} collapsed={collapsedGroups} onToggleGroup={toggleGroup} />
+      {/* Sidebar mobile: drawer geser dari kiri dengan overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+          <div className="adm-sidebar absolute inset-y-0 left-0 flex w-[85%] max-w-xs flex-col border-r shadow-2xl">
+            <div className="flex items-start justify-between border-b border-[#e1e9f3] px-5 py-4">
+              <Brand />
+              <button type="button" onClick={() => setMobileMenuOpen(false)} className="rounded-md p-1.5 text-[color:var(--muted)] hover:bg-[#edf4fc]" aria-label="Tutup menu">
+                <X size={18} />
+              </button>
             </div>
+            <div className="flex-1 overflow-y-auto">
+              <SidebarNav {...navProps} />
+            </div>
+            <AccountFooter account={account} role={effectiveRole} onLogout={handleLogout} />
           </div>
-        )}
+        </div>
+      )}
 
-        <main className="glass-panel min-h-[70vh] w-full min-w-0 flex-1 rounded-2xl p-5 sm:p-6 lg:p-8">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="adm-topbar sticky top-0 z-40 flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="rounded-md p-2 text-[color:var(--ink)] hover:bg-[#edf4fc] lg:hidden"
+              aria-label="Buka menu"
+            >
+              <Menu size={20} />
+            </button>
+            <img src={logoFull} alt="Bangsa Media Bali" className="h-8 w-auto sm:hidden" />
+            {currentTab && (
+              <nav aria-label="Lokasi halaman" className="hidden min-w-0 items-center gap-1.5 text-[13px] sm:flex">
+                <span className="truncate text-[color:var(--muted)]">{currentGroup?.group}</span>
+                <ChevronRight size={14} className="shrink-0 text-[color:var(--faint)]" />
+                <span className="flex items-center gap-1.5 truncate font-medium text-[color:var(--ink)]">
+                  <currentTab.icon size={15} className="shrink-0 text-[color:var(--accent)]" /> {currentTab.label}
+                </span>
+              </nav>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <GlobalSearch onNavigate={selectTab} allowedTabIds={allowedTabIds} />
+            <NotificationCenter onNavigate={selectTab} allowedTabIds={allowedTabIds} />
+            <a href="/" target="_blank" rel="noopener noreferrer" className="btn-secondary !px-3 !py-2 text-xs">
+              <ExternalLink size={14} /> <span className="hidden md:inline">Lihat Website</span>
+            </a>
+          </div>
+        </header>
+
+        <main className="admin-content mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
           {currentTab && (
-            <p className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 lg:hidden">
-              <currentTab.icon size={14} className="text-gold-soft" /> {currentTab.label}
+            <p className="mb-3 flex items-center gap-2 text-[13px] font-medium text-[color:var(--muted)] sm:hidden">
+              <currentTab.icon size={15} className="text-[color:var(--accent)]" /> {currentTab.label}
             </p>
           )}
-          {ActiveComponent && <ActiveComponent />}
-          {visibleTabs.length === 0 && (
-            <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
-              <Lock size={32} className="text-slate-600" />
-              <p className="text-sm font-semibold text-white">Belum ada menu yang diizinkan untuk akun Anda.</p>
-              <p className="max-w-sm text-xs text-slate-400">Hubungi Owner/Admin untuk mengatur akses menu Anda di halaman Kelola Pengguna.</p>
-            </div>
-          )}
+          <div className="glass-panel min-h-[70vh] rounded-2xl p-5 sm:p-6 lg:p-7">
+            {ActiveComponent && <ActiveComponent />}
+            {visibleTabs.length === 0 && (
+              <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
+                <Lock size={32} className="text-slate-600" />
+                <p className="text-sm font-semibold text-white">Belum ada menu yang diizinkan untuk akun Anda.</p>
+                <p className="max-w-sm text-xs text-slate-400">Hubungi Owner/Admin untuk mengatur akses menu Anda di halaman Kelola Pengguna.</p>
+              </div>
+            )}
+          </div>
         </main>
       </div>
     </div>

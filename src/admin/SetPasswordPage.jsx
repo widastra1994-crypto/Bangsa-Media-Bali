@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, CheckCircle2, Lock } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
-import MascotIcon from '../components/MascotIcon'
+import logoFull from '../assets/logo-full.png'
+import './admin-theme.css'
 
 const MIN_LENGTH = 8
 const LINK_TYPES = ['invite', 'recovery']
@@ -144,11 +145,14 @@ export default function SetPasswordPage() {
   const showInvalid = !checking && !done && !pendingToken && !session
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-nusatech-gradient px-5">
-      <div className="glass-panel w-full max-w-sm rounded-3xl p-8 shadow-blue-glow">
+    <div className="admin-theme admin-login-root flex min-h-screen items-center justify-center px-5 py-10">
+      <div className="admin-login-bg" aria-hidden="true" />
+      <div className="admin-login-blob admin-login-blob-a" aria-hidden="true" />
+      <div className="admin-login-blob admin-login-blob-b" aria-hidden="true" />
+      <div className="admin-login-card w-full max-w-sm p-8">
         <div className="flex flex-col items-center text-center">
-          <MascotIcon variant="assistant" size={72} />
-          <h1 className="mt-4 text-xl font-bold text-white">Atur Password Akun</h1>
+          <img src={logoFull} alt="Bangsa Media Bali" className="h-14 w-auto" />
+          <h1 className="mt-6 text-[22px] font-bold text-white">Atur Password Akun</h1>
           {session?.user?.email ? (
             <p className="mt-1 text-sm text-slate-400">{session.user.email}</p>
           ) : (
