@@ -29,6 +29,29 @@ async function getBotReply(text, assistant, history) {
   return getKeywordReply(text, assistant)
 }
 
+// Ikon asisten: gambar yang diunggah dari CMS (Asisten Chat) bila ada,
+// kalau tidak pakai maskot robot SVG bawaan.
+function AssistantAvatar({ image, size, className = '' }) {
+  if (image) {
+    return (
+      <img
+        src={image}
+        alt=""
+        style={{ width: size, height: size }}
+        className={`shrink-0 rounded-full border border-sky-100 bg-white object-cover ${className}`}
+      />
+    )
+  }
+  return <MascotIcon variant="assistant" size={size} className={className} />
+}
+
+// Bulatan kecil di samping pesan bot: gambar ikon, atau inisial nama asisten.
+function BotBadge({ assistant }) {
+  if (assistant.avatarImage) return <AssistantAvatar image={assistant.avatarImage} size={24} />
+  const initials = (assistant.name || 'Bot').replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase()
+  return <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ebtblue text-[10px] font-semibold text-white">{initials}</div>
+}
+
 export default function FloatingAssistant() {
   const { content } = useDisplayContent()
   const { calculator, assistant } = content
@@ -57,7 +80,7 @@ export default function FloatingAssistant() {
         <div className="glass-panel flex w-80 flex-col overflow-hidden rounded-2xl border border-sky-200 bg-white shadow-blue-glow sm:w-96">
           <div className="flex items-center justify-between border-b border-sky-100 bg-gradient-to-r from-sky-50 to-white p-4">
             <div className="flex items-center gap-2.5">
-              <MascotIcon variant="assistant" size={36} />
+              <AssistantAvatar image={assistant.avatarImage} size={40} />
               <div>
                 <div className="flex items-center gap-1.5 text-sm font-bold text-ink">
                   {assistant.name} <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -74,7 +97,7 @@ export default function FloatingAssistant() {
             {messages.map((m, i) =>
               m.from === 'bot' ? (
                 <div key={i} className="flex gap-2">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ebtblue text-[10px] text-gold-soft">NB</div>
+                  <BotBadge assistant={assistant} />
                   <div className="rounded-2xl rounded-tl-none border border-sky-100 bg-sky-50 p-3 leading-relaxed text-slate-800">{m.text}</div>
                 </div>
               ) : (
@@ -85,7 +108,7 @@ export default function FloatingAssistant() {
             )}
             {thinking && (
               <div className="flex gap-2">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ebtblue text-[10px] text-gold-soft">NB</div>
+                <BotBadge assistant={assistant} />
                 <div className="flex items-center gap-1 rounded-2xl rounded-tl-none border border-sky-100 bg-sky-50 p-3">
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
@@ -148,7 +171,7 @@ export default function FloatingAssistant() {
         className="relative flex h-16 w-16 items-center justify-center rounded-full border border-gold/50 bg-white/90 shadow-gold-glow backdrop-blur-xl transition-transform hover:scale-105"
       >
         <span className="absolute inset-0 animate-pulse-slow rounded-full bg-gold/20" />
-        {open ? <X className="relative z-10 text-gold-deep" size={22} /> : <MascotIcon variant="assistant" size={48} className="relative z-10" />}
+        {open ? <X className="relative z-10 text-gold-deep" size={22} /> : <AssistantAvatar image={assistant.avatarImage} size={48} className="relative z-10" />}
         {!open && <span className="absolute -right-1 -top-1 h-4 w-4 animate-ping rounded-full border-2 border-white bg-emerald-400" />}
         {!open && <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-400" />}
       </button>
