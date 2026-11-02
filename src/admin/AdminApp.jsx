@@ -47,6 +47,9 @@ import TrialBalance from './ledger/TrialBalance'
 import JournalEntries from './ledger/JournalEntries'
 import ChartOfAccounts from './ledger/ChartOfAccounts'
 import PeriodClosing from './ledger/PeriodClosing'
+import PayrollRuns from './payroll/PayrollRuns'
+import PayrollSettings from './payroll/PayrollSettings'
+import MyPayslips from './payroll/MyPayslips'
 import GlobalSearch from './GlobalSearch'
 import NotificationCenter from './NotificationCenter'
 
@@ -93,6 +96,9 @@ const TAB_COMPONENTS = {
   'gl-journal': JournalEntries,
   'gl-accounts': ChartOfAccounts,
   'gl-closing': PeriodClosing,
+  'acc-payroll': PayrollRuns,
+  'acc-payroll-settings': PayrollSettings,
+  'my-payslips': MyPayslips,
 }
 
 const ROLE_NAME = { owner: 'Owner', admin: 'Admin', staff: 'Staff', viewer: 'Viewer' }

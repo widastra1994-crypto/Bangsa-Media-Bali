@@ -256,3 +256,112 @@ export function generateContractPdf(contract, client, brand) {
   drawFooter(doc, 'Dokumen ini sah secara elektronik sesuai persetujuan yang diberikan klien melalui Portal Klien.')
   doc.save(`Kontrak-${(contract.title || 'dokumen').replace(/[^a-z0-9]+/gi, '-')}.pdf`)
 }
+
+const EMPLOYMENT_LABEL = { tetap: 'Karyawan Tetap', kontrak: 'Karyawan Kontrak', freelance: 'Freelance' }
+
+export function generatePayslipPdf(slip, brand) {
+  const doc = new jsPDF()
+  drawLetterhead(doc, brand)
+  const period = new Date(`${slip.period}T00:00:00`).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+
+  doc.setTextColor(...DARK)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(18)
+  doc.text('SLIP GAJI', 15, 46)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Periode: ${period}`, 15, 53)
+  doc.text(`No. Slip: ${slip.slip_no || '-'}`, 195, 46, { align: 'right' })
+  doc.setTextColor(...SLATE)
+  doc.setFontSize(8.5)
+  doc.text('RAHASIA - hanya untuk karyawan yang bersangkutan', 195, 53, { align: 'right' })
+
+  doc.setDrawColor(...GOLD)
+  doc.setLineWidth(0.4)
+  doc.rect(15, 58, 180, 22)
+  doc.setFontSize(9.5)
+  const info = (label, value, x, y) => {
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...SLATE)
+    doc.text(label, x, y)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...DARK)
+    doc.text(String(value || '-'), x + 30, y)
+  }
+  info('Nama', slip.staff_name, 20, 65)
+  info('Jabatan', slip.role_type, 20, 71)
+  info('Status', EMPLOYMENT_LABEL[slip.employment_type] || slip.employment_type, 20, 77)
+  info('Bank', slip.bank_name, 110, 65)
+  info('No. Rekening', slip.bank_account_number, 110, 71)
+  info('Atas Nama', slip.bank_account_holder || slip.staff_name, 110, 77)
+
+  const earnings = [['Gaji Pokok', slip.base_salary]]
+  for (const a of slip.allowances || []) earnings.push([`Tunjangan ${a.label}`, a.amount])
+  for (const c of slip.commission_details || []) earnings.push([`Komisi ${c.project} (${c.role})`, c.amount])
+  if (Number(slip.overtime_amount) > 0) earnings.push([`Lembur ${Number(slip.overtime_hours)} jam`, slip.overtime_amount])
+  if (Number(slip.bonus) > 0) earnings.push([`Bonus${slip.bonus_note ? ` (${slip.bonus_note})` : ''}`, slip.bonus])
+
+  const deductions = []
+  if (Number(slip.bpjs_kes_employee) > 0) deductions.push(['BPJS Kesehatan', slip.bpjs_kes_employee])
+  if (Number(slip.bpjs_tk_employee) > 0) deductions.push(['BPJS Ketenagakerjaan', slip.bpjs_tk_employee])
+  if (Number(slip.pph21) > 0) deductions.push(['PPh 21', slip.pph21])
+  if (Number(slip.loan_deduction) > 0) deductions.push(['Cicilan Kasbon', slip.loan_deduction])
+  if (Number(slip.absence_deduction) > 0) deductions.push(['Potongan Absen', slip.absence_deduction])
+  if (Number(slip.other_deduction) > 0) deductions.push([`Potongan Lain${slip.other_deduction_note ? ` (${slip.other_deduction_note})` : ''}`, slip.other_deduction])
+
+  const column = (title, rows, total, x) => {
+    let y = 92
+    doc.setFillColor(241, 245, 249)
+    doc.rect(x, y - 5, 87, 8, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(...DARK)
+    doc.text(title, x + 2, y)
+    y += 9
+    doc.setFontSize(9)
+    for (const [label, value] of rows) {
+      doc.setFont('helvetica', 'normal')
+      const lines = doc.splitTextToSize(label, 55)
+      doc.text(lines, x + 2, y)
+      doc.text(idr(value), x + 85, y, { align: 'right' })
+      y += 5.5 * lines.length
+    }
+    if (rows.length === 0) {
+      doc.setTextColor(...SLATE)
+      doc.text('-', x + 2, y)
+      doc.setTextColor(...DARK)
+      y += 5.5
+    }
+    return { y, total }
+  }
+  const left = column('PENDAPATAN', earnings, slip.gross_pay, 15)
+  const right = column('POTONGAN', deductions, slip.total_deductions, 108)
+  const yTotal = Math.max(left.y, right.y) + 3
+  doc.setDrawColor(...SLATE)
+  doc.setLineWidth(0.2)
+  doc.line(15, yTotal - 4, 195, yTotal - 4)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9.5)
+  doc.text('Total Pendapatan', 17, yTotal + 1)
+  doc.text(idr(slip.gross_pay), 100, yTotal + 1, { align: 'right' })
+  doc.text('Total Potongan', 110, yTotal + 1)
+  doc.text(idr(slip.total_deductions), 193, yTotal + 1, { align: 'right' })
+
+  doc.setFillColor(...NAVY)
+  doc.rect(15, yTotal + 8, 180, 14, 'F')
+  doc.setTextColor(...GOLD)
+  doc.setFontSize(12)
+  doc.text('GAJI BERSIH (TAKE HOME PAY)', 20, yTotal + 17)
+  doc.setTextColor(255, 255, 255)
+  doc.text(idr(slip.net_pay), 190, yTotal + 17, { align: 'right' })
+
+  if (slip.notes) {
+    doc.setTextColor(...SLATE)
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(9)
+    doc.text(doc.splitTextToSize(`Catatan: ${slip.notes}`, 180), 15, yTotal + 32)
+  }
+
+  drawFooter(doc, 'Slip gaji ini dibuat otomatis oleh sistem dan sah tanpa tanda tangan basah. Simpan sebagai dokumen pribadi.')
+  doc.save(`${slip.slip_no || 'slip-gaji'}.pdf`)
+}

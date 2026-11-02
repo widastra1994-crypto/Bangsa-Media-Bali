@@ -26,6 +26,7 @@ export const SOURCE_LABELS = {
   closing_tax: 'PPh Final (Tutup Buku)',
   payroll: 'Penggajian',
   payroll_payment: 'Bayar Gaji',
+  employee_loan: 'Kasbon Karyawan',
 }
 
 // Aset & beban bersaldo normal debit; liabilitas, ekuitas, pendapatan kredit.

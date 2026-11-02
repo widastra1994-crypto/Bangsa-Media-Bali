@@ -12,6 +12,7 @@ const OPERATING_LABELS = {
   payroll_payment: 'Pembayaran gaji',
   closing_tax: 'Pembayaran pajak',
   digital_asset: 'Biaya domain & server',
+  employee_loan: 'Kasbon karyawan',
 }
 
 // Kelompokkan tiap jurnal yang menyentuh kas/bank: operasional, investasi

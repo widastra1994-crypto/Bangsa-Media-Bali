@@ -19,7 +19,7 @@ export function menuAccessSummary(profile) {
 export default function MenuAccessEditor({ profile, onSaved, onClose }) {
   const groups = eligibleGroupsForRole(profile.role)
   const allIds = groups.flatMap((g) => g.tabs.map((t) => t.id))
-  const lockedGroups = MENU_GROUPS.filter((g) => !groups.some((eg) => eg.group === g.group)).map((g) => g.group)
+  const lockedGroups = MENU_GROUPS.filter((g) => !g.personal && !groups.some((eg) => eg.group === g.group)).map((g) => g.group)
   // Untuk Viewer: menu yang sebenarnya bisa dibuka cukup dengan role Staff,
   // supaya Owner tidak terdorong menaikkan ke Admin tanpa perlu.
   const staffOnlyLabels =

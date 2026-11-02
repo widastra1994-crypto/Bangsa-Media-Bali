@@ -43,6 +43,9 @@ import {
   ArrowLeftRight,
   LockKeyhole,
   BookMarked,
+  Banknote,
+  ReceiptText,
+  IdCard,
 } from 'lucide-react'
 
 // Metadata menu tanpa komponen halaman, supaya bisa dipakai juga oleh checklist
@@ -85,6 +88,8 @@ export const MENU_GROUPS = [
       { id: 'acc-expenses', label: 'Pengeluaran', icon: Wallet, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-commissions', label: 'Komisi Tim', icon: Users, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-bank', label: 'Rekonsiliasi Bank', icon: Landmark, roles: ['owner', 'admin'] },
+      { id: 'acc-payroll', label: 'Penggajian', icon: Banknote, roles: ['owner', 'admin'] },
+      { id: 'acc-payroll-settings', label: 'Pengaturan Gaji', icon: IdCard, roles: ['owner', 'admin'] },
     ],
   },
   {
@@ -119,6 +124,15 @@ export const MENU_GROUPS = [
     tabs: [{ id: 'acc-users', label: 'Kelola Pengguna', icon: UserCog }],
   },
   {
+    // Menu pribadi: selalu tampil untuk setiap akun internal, tidak ikut
+    // checklist akses menu (datanya sudah dibatasi RLS ke milik sendiri).
+    group: 'Akun Saya',
+    icon: UserCog,
+    roles: ['owner', 'admin', 'staff', 'viewer'],
+    personal: true,
+    tabs: [{ id: 'my-payslips', label: 'Slip Gaji Saya', icon: ReceiptText }],
+  },
+  {
     group: 'Konten Website',
     icon: Layout,
     roles: ['owner', 'admin'],
@@ -146,9 +160,10 @@ export const CONFIGURABLE_ROLES = ['staff', 'viewer']
 
 const allows = (roles, role) => !roles || roles.includes(role)
 
+// Menu yang bisa diatur lewat checklist (tanpa grup pribadi).
 export function eligibleGroupsForRole(role) {
   return MENU_GROUPS.map((group) => {
-    if (!allows(group.roles, role)) return null
+    if (group.personal || !allows(group.roles, role)) return null
     const tabs = group.tabs.filter((tab) => allows(tab.roles, role))
     return tabs.length > 0 ? { ...group, tabs } : null
   }).filter(Boolean)
@@ -162,9 +177,10 @@ export function eligibleTabIds(role) {
 // menambah di luar batas itu. menuAccess null = belum pernah diatur -> semua
 // menu yang layak untuk role tersebut.
 export function visibleGroupsFor(role, menuAccess) {
-  const groups = eligibleGroupsForRole(role)
-  if (!CONFIGURABLE_ROLES.includes(role) || !Array.isArray(menuAccess)) return groups
-  return groups
-    .map((g) => ({ ...g, tabs: g.tabs.filter((t) => menuAccess.includes(t.id)) }))
-    .filter((g) => g.tabs.length > 0)
+  const restricted = CONFIGURABLE_ROLES.includes(role) && Array.isArray(menuAccess)
+  return MENU_GROUPS.map((group) => {
+    if (!allows(group.roles, role)) return null
+    const tabs = group.tabs.filter((t) => allows(t.roles, role) && (group.personal || !restricted || menuAccess.includes(t.id)))
+    return tabs.length > 0 ? { ...group, tabs } : null
+  }).filter(Boolean)
 }
