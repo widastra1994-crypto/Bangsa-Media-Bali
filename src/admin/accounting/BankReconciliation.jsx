@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, Upload } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useSupabaseTable } from './useSupabaseTable'
 import { logAudit } from './auditLog'
+import { invoiceOutstanding } from '../../lib/invoiceUtils'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -116,7 +117,7 @@ export default function BankReconciliation() {
 
   const findSuggestedMatch = (mutation) => {
     if (mutation.direction !== 'in') return null
-    return invoices.find((inv) => Math.abs(Number(inv.total_amount) - Number(inv.paid_amount) - Number(mutation.amount)) < 1)
+    return invoices.find((inv) => Math.abs(invoiceOutstanding(inv) - Number(mutation.amount)) < 1)
   }
 
   const confirmMatch = async (mutation, invoice) => {
@@ -226,7 +227,7 @@ export default function BankReconciliation() {
                     </option>
                     {invoices.map((inv) => (
                       <option key={inv.id} value={inv.id}>
-                        {inv.invoice_number} - {inv.acc_clients?.company_name} (sisa {idr(Number(inv.total_amount) - Number(inv.paid_amount))})
+                        {inv.invoice_number} - {inv.acc_clients?.company_name} (sisa {idrinvoiceOutstanding(inv)})
                       </option>
                     ))}
                   </select>

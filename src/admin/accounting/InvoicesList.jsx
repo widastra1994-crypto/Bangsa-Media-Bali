@@ -5,6 +5,7 @@ import { sendFinanceEmail } from '../../lib/financeEmail'
 import { useSupabaseTable } from './useSupabaseTable'
 import { logAudit } from './auditLog'
 import { useContent } from '../../context/ContentContext'
+import { invoiceOutstanding } from '../../lib/invoiceUtils'
 
 // Lazy-load jsPDF (lumayan besar) hanya saat tombol unduh benar-benar diklik,
 // supaya tidak ikut membebani bundle awal admin panel.
@@ -30,7 +31,7 @@ const PAYMENT_METHODS = [
 ]
 
 function PaymentForm({ invoice, bankAccounts, onDone }) {
-  const outstanding = Number(invoice.total_amount) - Number(invoice.paid_amount)
+  const outstanding = invoiceOutstanding(invoice)
   const [amount, setAmount] = useState(outstanding > 0 ? outstanding : '')
   const [method, setMethod] = useState('bank_transfer')
   const [bankAccountId, setBankAccountId] = useState('')
@@ -131,8 +132,11 @@ export default function InvoicesList() {
 
   const updatePph23 = async (id, patch) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)))
+    // Ambil ulang baris: database menghitung ulang potongan PPh 23 & status Lunas.
     const { error: err } = await supabase.from('acc_invoices').update(patch).eq('id', id)
-    if (err) setError(err.message)
+    if (err) return setError(err.message)
+    const { data } = await supabase.from('acc_invoices').select('status, paid_amount, pph23_amount').eq('id', id).maybeSingle()
+    if (data) setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)))
   }
 
   const resendEmail = async (invoice) => {
@@ -169,7 +173,7 @@ export default function InvoicesList() {
         {loading && <p className="text-sm text-slate-400">Memuat...</p>}
         {!loading && rows.length === 0 && <p className="text-sm text-slate-500">Belum ada invoice.</p>}
         {rows.map((inv) => {
-          const outstanding = Number(inv.total_amount) - Number(inv.paid_amount)
+          const outstanding = invoiceOutstanding(inv)
           return (
             <div key={inv.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">

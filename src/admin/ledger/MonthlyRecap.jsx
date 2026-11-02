@@ -4,6 +4,7 @@ import { exportToCsv } from '../accounting/csvExport'
 import { currentMonth, fetchBalances, formatDate, idr, monthLabel, monthRange, shiftMonth, today } from './ledgerUtils'
 import { ErrorNote, MonthPicker, PageHeader, PrintTitle, StatCard } from './LedgerUI'
 import { buildProfitLoss } from './ProfitLoss'
+import { invoiceOutstanding } from '../../lib/invoiceUtils'
 
 // Warna grafik ditulis langsung: utilitas bg-gold dipetakan ulang oleh tema admin.
 const REV_COLOR = '#1468c8'
@@ -61,7 +62,7 @@ export default function MonthlyRecap() {
     Promise.all([
       fetchBalances(from, to),
       fetchBalances(prev.from, prev.to),
-      supabase.from('acc_invoices').select('invoice_number, total_amount, paid_amount, due_date, status, is_pph23_withheld, subtotal, created_at, acc_clients(company_name)').in('status', ['sent', 'partial', 'overdue']),
+      supabase.from('acc_invoices').select('invoice_number, total_amount, paid_amount, pph23_amount, due_date, status, is_pph23_withheld, subtotal, created_at, acc_clients(company_name)').in('status', ['sent', 'partial', 'overdue']),
       supabase.from('acc_vendor_bills').select('bill_number, amount, paid_amount, due_date, status, acc_vendors(vendor_name)').neq('status', 'paid'),
       supabase.from('acc_commissions').select('commission_amount').eq('status', 'payable'),
       supabase.from('acc_tax_profile').select('pph_final_rate, pph23_rate').eq('id', 1).maybeSingle(),
@@ -88,7 +89,7 @@ export default function MonthlyRecap() {
     const cashOut = cash.reduce((s, b) => s + b.credit, 0)
 
     const receivables = data.inv
-      .map((i) => ({ ...i, outstanding: Number(i.total_amount) - Number(i.paid_amount), bucket: agingBucket(i.due_date, data.asOf) }))
+      .map((i) => ({ ...i, outstanding: invoiceOutstanding(i), bucket: agingBucket(i.due_date, data.asOf) }))
       .filter((i) => i.outstanding > 0)
     const aging = Object.fromEntries(AGING.map((a) => [a.key, receivables.filter((r) => r.bucket === a.key).reduce((s, r) => s + r.outstanding, 0)]))
     const byClient = Object.entries(

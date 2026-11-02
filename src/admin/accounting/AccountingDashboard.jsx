@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Briefcase, Coins, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
+import { invoiceOutstanding } from '../../lib/invoiceUtils'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -44,7 +45,7 @@ export default function AccountingDashboard() {
 
     const piutang = invoices
       .filter((i) => ['sent', 'partial', 'overdue'].includes(i.status))
-      .reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount)), 0)
+      .reduce((s, i) => s + invoiceOutstanding(i), 0)
 
     const kasMasukBulanIni = payments.filter((p) => new Date(p.payment_date) >= startOfMonth).reduce((s, p) => s + Number(p.amount_paid), 0)
 

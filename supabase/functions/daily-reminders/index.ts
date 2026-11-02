@@ -181,7 +181,7 @@ Deno.serve(async (req) => {
     for (const inv of invoices || []) {
       const client = inv.acc_clients
       if (!client?.email) continue
-      const outstanding = Number(inv.total_amount) - Number(inv.paid_amount)
+      const outstanding = Number(inv.total_amount) - Number(inv.pph23_amount || 0) - Number(inv.paid_amount)
       if (outstanding <= 0) continue
       const daysLeft = daysBetween(inv.due_date)
       const label = inv.acc_projects?.website_name || inv.invoice_number

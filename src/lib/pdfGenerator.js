@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf'
+import { invoiceOutstanding } from './invoiceUtils'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 const formatDate = (d) => (d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-')
@@ -134,12 +135,13 @@ export async function generateInvoicePdf(invoice, client, brand) {
   summaryRow('Subtotal', idr(invoice.subtotal))
   if (Number(invoice.tax_amount) > 0) summaryRow('Pajak', idr(invoice.tax_amount))
   summaryRow('TOTAL', idr(invoice.total_amount), true)
+  if (Number(invoice.pph23_amount) > 0) summaryRow('PPh 23 dipotong', `-${idr(invoice.pph23_amount)}`)
   summaryRow('Terbayar', idr(invoice.paid_amount))
   doc.setTextColor(...GOLD)
-  summaryRow('Sisa Tagihan', idr(Number(invoice.total_amount) - Number(invoice.paid_amount)), true)
+  summaryRow('Sisa Tagihan', idrinvoiceOutstanding(invoice), true)
   doc.setTextColor(...DARK)
 
-  if (brand?.qrisImageUrl && Number(invoice.total_amount) - Number(invoice.paid_amount) > 0) {
+  if (brand?.qrisImageUrl && invoiceOutstanding(invoice) > 0) {
     const dataUrl = await tryLoadImageAsDataUrl(brand.qrisImageUrl)
     if (dataUrl) {
       doc.setTextColor(...SLATE)
@@ -192,7 +194,7 @@ export function generateReceiptPdf(payment, invoice, client, brand) {
   row('Sejumlah', idr(payment.amount_paid))
   row('Untuk pembayaran', invoice?.invoice_number || '-')
   row('Metode Pembayaran', methodLabel[payment.payment_method] || payment.payment_method)
-  if (invoice) row('Sisa Tagihan', idr(Number(invoice.total_amount) - Number(invoice.paid_amount)))
+  if (invoice) row('Sisa Tagihan', idrinvoiceOutstanding(invoice))
 
   drawFooter(doc, 'Kuitansi ini adalah bukti pembayaran sah, dibuat otomatis oleh sistem.')
   doc.save(`${payment.receipt_number}.pdf`)

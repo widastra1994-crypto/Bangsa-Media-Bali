@@ -5,6 +5,7 @@ import { useContent } from '../context/ContentContext'
 import MascotIcon from '../components/MascotIcon'
 import SignaturePad from '../components/SignaturePad'
 import ProjectProgress from '../components/ProjectProgress'
+import { invoiceOutstanding } from '../lib/invoiceUtils'
 
 // Lazy-load jsPDF (lumayan besar) hanya saat tombol unduh benar-benar diklik,
 // supaya pengunjung website biasa (yang tidak pernah buka /portal) tidak ikut
@@ -321,14 +322,14 @@ function Dashboard({ session }) {
               </div>
               <div>
                 <p className="text-slate-500">Sisa</p>
-                <p className="font-semibold text-gold-deep">{idr(Number(inv.total_amount) - Number(inv.paid_amount))}</p>
+                <p className="font-semibold text-gold-deep">{idrinvoiceOutstanding(inv)}</p>
               </div>
             </div>
-            {brand?.qrisImageUrl && Number(inv.total_amount) - Number(inv.paid_amount) > 0 && (
+            {brand?.qrisImageUrl && invoiceOutstanding(inv) > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-sky-100 bg-sky-50 p-3">
                 <img src={brand.qrisImageUrl} alt="QRIS" className="h-20 w-20 rounded-lg border border-slate-200 bg-white object-contain p-1" />
                 <p className="max-w-[220px] text-[11px] text-slate-600">
-                  Scan QRIS ini untuk membayar, lalu masukkan nominal <span className="font-semibold text-gold-deep">{idr(Number(inv.total_amount) - Number(inv.paid_amount))}</span> secara manual.
+                  Scan QRIS ini untuk membayar, lalu masukkan nominal <span className="font-semibold text-gold-deep">{idrinvoiceOutstanding(inv)}</span> secara manual.
                 </p>
               </div>
             )}

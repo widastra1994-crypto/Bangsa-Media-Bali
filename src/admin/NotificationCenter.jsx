@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, Bell, Clock, FileWarning, ShieldAlert, UserPlus } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
+import { invoiceOutstanding } from '../lib/invoiceUtils'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -15,7 +16,7 @@ async function computeNotifications() {
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString()
 
   const [overdueInv, expiringAssets, newLeads, overdueBills] = await Promise.all([
-    supabase.from('acc_invoices').select('id, invoice_number, total_amount, paid_amount, due_date, acc_clients(company_name)').eq('status', 'overdue').order('due_date', { ascending: true }).limit(10),
+    supabase.from('acc_invoices').select('id, invoice_number, total_amount, paid_amount, pph23_amount, due_date, acc_clients(company_name)').eq('status', 'overdue').order('due_date', { ascending: true }).limit(10),
     supabase.from('acc_digital_assets').select('id, domain_name, expiry_date, acc_projects(website_name)').lte('expiry_date', soon.toISOString()).gte('expiry_date', today.toISOString()).order('expiry_date', { ascending: true }).limit(10),
     supabase.from('consultation_leads').select('id, name, business_name, created_at').gte('created_at', startOfToday).order('created_at', { ascending: false }).limit(10),
     supabase.from('acc_vendor_bills').select('id, bill_number, amount, paid_amount, due_date, acc_vendors(vendor_name)').neq('status', 'paid').lte('due_date', today.toISOString()).order('due_date', { ascending: true }).limit(10),
@@ -29,7 +30,7 @@ async function computeNotifications() {
       icon: FileWarning,
       severity: 'high',
       title: `Invoice ${i.invoice_number} jatuh tempo`,
-      detail: `${i.acc_clients?.company_name || '-'} · Sisa ${idr(Number(i.total_amount) - Number(i.paid_amount))}`,
+      detail: `${i.acc_clients?.company_name || '-'} · Sisa ${idrinvoiceOutstanding(i)}`,
       tab: 'acc-invoices',
     }),
   )
