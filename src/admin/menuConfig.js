@@ -42,26 +42,6 @@ import {
 // pernah melihat /admin.
 export const MENU_GROUPS = [
   {
-    group: 'Konten Website',
-    icon: Layout,
-    roles: ['owner', 'admin'],
-    tabs: [
-      { id: 'analytics', label: 'Dashboard Analitik', icon: BarChart3 },
-      { id: 'brand', label: 'Brand & Navigasi', icon: Palette },
-      { id: 'hero', label: 'Hero', icon: Sparkles },
-      { id: 'services', label: 'Layanan', icon: Briefcase },
-      { id: 'pricing', label: 'Paket Harga', icon: Tag },
-      { id: 'calculator', label: 'Kalkulator', icon: Calculator },
-      { id: 'portfolio', label: 'Portofolio', icon: FolderKanban },
-      { id: 'testimonials', label: 'Testimoni', icon: Quote },
-      { id: 'blog', label: 'Blog', icon: Newspaper },
-      { id: 'advantages', label: 'Keunggulan', icon: Award },
-      { id: 'about', label: 'Tentang', icon: Info },
-      { id: 'contact', label: 'Kontak & Footer', icon: Phone },
-      { id: 'assistant', label: 'Asisten Chat', icon: Bot },
-    ],
-  },
-  {
     group: 'Dashboard & Master',
     icon: LayoutDashboard,
     roles: ['owner', 'admin'],
@@ -111,6 +91,26 @@ export const MENU_GROUPS = [
     icon: Settings,
     roles: ['owner', 'admin'],
     tabs: [{ id: 'acc-users', label: 'Kelola Pengguna', icon: UserCog }],
+  },
+  {
+    group: 'Konten Website',
+    icon: Layout,
+    roles: ['owner', 'admin'],
+    tabs: [
+      { id: 'analytics', label: 'Dashboard Analitik', icon: BarChart3 },
+      { id: 'brand', label: 'Brand & Navigasi', icon: Palette },
+      { id: 'hero', label: 'Hero', icon: Sparkles },
+      { id: 'services', label: 'Layanan', icon: Briefcase },
+      { id: 'pricing', label: 'Paket Harga', icon: Tag },
+      { id: 'calculator', label: 'Kalkulator', icon: Calculator },
+      { id: 'portfolio', label: 'Portofolio', icon: FolderKanban },
+      { id: 'testimonials', label: 'Testimoni', icon: Quote },
+      { id: 'blog', label: 'Blog', icon: Newspaper },
+      { id: 'advantages', label: 'Keunggulan', icon: Award },
+      { id: 'about', label: 'Tentang', icon: Info },
+      { id: 'contact', label: 'Kontak & Footer', icon: Phone },
+      { id: 'assistant', label: 'Asisten Chat', icon: Bot },
+    ],
   },
 ]
 
