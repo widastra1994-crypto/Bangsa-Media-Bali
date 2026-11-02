@@ -33,6 +33,16 @@ import {
   Clock,
   FileSignature,
   ListChecks,
+  ClipboardList,
+  ListTree,
+  NotebookPen,
+  BookOpen,
+  Scale,
+  FileBarChart,
+  PieChart,
+  ArrowLeftRight,
+  LockKeyhole,
+  BookMarked,
 } from 'lucide-react'
 
 // Metadata menu tanpa komponen halaman, supaya bisa dipakai juga oleh checklist
@@ -75,6 +85,22 @@ export const MENU_GROUPS = [
       { id: 'acc-expenses', label: 'Pengeluaran', icon: Wallet, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-commissions', label: 'Komisi Tim', icon: Users, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-bank', label: 'Rekonsiliasi Bank', icon: Landmark, roles: ['owner', 'admin'] },
+    ],
+  },
+  {
+    group: 'Laporan Akuntansi',
+    icon: BookMarked,
+    roles: ['owner', 'admin', 'viewer'],
+    tabs: [
+      { id: 'gl-recap', label: 'Rekap Bulanan', icon: ClipboardList },
+      { id: 'gl-profit-loss', label: 'Laba Rugi', icon: FileBarChart },
+      { id: 'gl-balance-sheet', label: 'Neraca', icon: PieChart },
+      { id: 'gl-cash-flow', label: 'Arus Kas', icon: ArrowLeftRight },
+      { id: 'gl-ledger', label: 'Buku Besar', icon: BookOpen },
+      { id: 'gl-trial-balance', label: 'Neraca Saldo', icon: Scale },
+      { id: 'gl-journal', label: 'Jurnal Umum', icon: NotebookPen },
+      { id: 'gl-accounts', label: 'Bagan Akun', icon: ListTree },
+      { id: 'gl-closing', label: 'Tutup Buku', icon: LockKeyhole, roles: ['owner', 'admin'] },
     ],
   },
   {

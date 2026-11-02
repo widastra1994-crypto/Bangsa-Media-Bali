@@ -38,6 +38,15 @@ import StaffProgressBoard from './accounting/StaffProgressBoard'
 import ProfitabilityReport from './accounting/ProfitabilityReport'
 import TimeLogsEditor from './accounting/TimeLogsEditor'
 import ContractsEditor from './accounting/ContractsEditor'
+import MonthlyRecap from './ledger/MonthlyRecap'
+import ProfitLoss from './ledger/ProfitLoss'
+import BalanceSheet from './ledger/BalanceSheet'
+import CashFlow from './ledger/CashFlow'
+import GeneralLedger from './ledger/GeneralLedger'
+import TrialBalance from './ledger/TrialBalance'
+import JournalEntries from './ledger/JournalEntries'
+import ChartOfAccounts from './ledger/ChartOfAccounts'
+import PeriodClosing from './ledger/PeriodClosing'
 import GlobalSearch from './GlobalSearch'
 import NotificationCenter from './NotificationCenter'
 
@@ -75,6 +84,15 @@ const TAB_COMPONENTS = {
   'acc-tax': TaxModule,
   'acc-audit': AuditTrailViewer,
   'acc-users': UserManagement,
+  'gl-recap': MonthlyRecap,
+  'gl-profit-loss': ProfitLoss,
+  'gl-balance-sheet': BalanceSheet,
+  'gl-cash-flow': CashFlow,
+  'gl-ledger': GeneralLedger,
+  'gl-trial-balance': TrialBalance,
+  'gl-journal': JournalEntries,
+  'gl-accounts': ChartOfAccounts,
+  'gl-closing': PeriodClosing,
 }
 
 const ROLE_NAME = { owner: 'Owner', admin: 'Admin', staff: 'Staff', viewer: 'Viewer' }
