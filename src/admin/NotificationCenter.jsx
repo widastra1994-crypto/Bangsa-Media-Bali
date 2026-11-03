@@ -30,7 +30,7 @@ async function computeNotifications() {
       icon: FileWarning,
       severity: 'high',
       title: `Invoice ${i.invoice_number} jatuh tempo`,
-      detail: `${i.acc_clients?.company_name || '-'} · Sisa ${idrinvoiceOutstanding(i)}`,
+      detail: `${i.acc_clients?.company_name || '-'} · Sisa ${idr(invoiceOutstanding(i))}`,
       tab: 'acc-invoices',
     }),
   )

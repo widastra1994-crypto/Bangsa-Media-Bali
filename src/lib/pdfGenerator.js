@@ -138,7 +138,7 @@ export async function generateInvoicePdf(invoice, client, brand) {
   if (Number(invoice.pph23_amount) > 0) summaryRow('PPh 23 dipotong', `-${idr(invoice.pph23_amount)}`)
   summaryRow('Terbayar', idr(invoice.paid_amount))
   doc.setTextColor(...GOLD)
-  summaryRow('Sisa Tagihan', idrinvoiceOutstanding(invoice), true)
+  summaryRow('Sisa Tagihan', idr(invoiceOutstanding(invoice)), true)
   doc.setTextColor(...DARK)
 
   if (brand?.qrisImageUrl && invoiceOutstanding(invoice) > 0) {
@@ -194,7 +194,7 @@ export function generateReceiptPdf(payment, invoice, client, brand) {
   row('Sejumlah', idr(payment.amount_paid))
   row('Untuk pembayaran', invoice?.invoice_number || '-')
   row('Metode Pembayaran', methodLabel[payment.payment_method] || payment.payment_method)
-  if (invoice) row('Sisa Tagihan', idrinvoiceOutstanding(invoice))
+  if (invoice) row('Sisa Tagihan', idr(invoiceOutstanding(invoice)))
 
   drawFooter(doc, 'Kuitansi ini adalah bukti pembayaran sah, dibuat otomatis oleh sistem.')
   doc.save(`${payment.receipt_number}.pdf`)

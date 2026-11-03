@@ -322,14 +322,14 @@ function Dashboard({ session }) {
               </div>
               <div>
                 <p className="text-slate-500">Sisa</p>
-                <p className="font-semibold text-gold-deep">{idrinvoiceOutstanding(inv)}</p>
+                <p className="font-semibold text-gold-deep">{idr(invoiceOutstanding(inv))}</p>
               </div>
             </div>
             {brand?.qrisImageUrl && invoiceOutstanding(inv) > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-sky-100 bg-sky-50 p-3">
                 <img src={brand.qrisImageUrl} alt="QRIS" className="h-20 w-20 rounded-lg border border-slate-200 bg-white object-contain p-1" />
                 <p className="max-w-[220px] text-[11px] text-slate-600">
-                  Scan QRIS ini untuk membayar, lalu masukkan nominal <span className="font-semibold text-gold-deep">{idrinvoiceOutstanding(inv)}</span> secara manual.
+                  Scan QRIS ini untuk membayar, lalu masukkan nominal <span className="font-semibold text-gold-deep">{idr(invoiceOutstanding(inv))}</span> secara manual.
                 </p>
               </div>
             )}

@@ -227,7 +227,7 @@ export default function BankReconciliation() {
                     </option>
                     {invoices.map((inv) => (
                       <option key={inv.id} value={inv.id}>
-                        {inv.invoice_number} - {inv.acc_clients?.company_name} (sisa {idrinvoiceOutstanding(inv)})
+                        {inv.invoice_number} - {inv.acc_clients?.company_name} (sisa {idr(invoiceOutstanding(inv))})
                       </option>
                     ))}
                   </select>
