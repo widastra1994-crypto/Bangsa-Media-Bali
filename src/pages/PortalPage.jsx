@@ -223,14 +223,6 @@ function Dashboard({ session }) {
         </button>
       </div>
 
-      {client.referral_code && (
-        <div className="mt-4 rounded-2xl border border-gold/50 bg-amber-50 p-4">
-          <p className="text-xs text-gold-deep">
-            Kode Referral Anda: <strong>{client.referral_code}</strong> -- bagikan ke rekan Anda untuk dapat potongan biaya perpanjangan domain/hosting tahun depan.
-          </p>
-        </div>
-      )}
-
       {contracts.filter((c) => c.status === 'sent').length > 0 && (
         <div className="mt-4 space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-600">Kontrak Menunggu Tanda Tangan</h2>

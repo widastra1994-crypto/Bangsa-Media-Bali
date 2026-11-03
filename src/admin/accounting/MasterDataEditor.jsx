@@ -45,7 +45,6 @@ function ClientsPanel() {
         { key: 'phone_primary', label: 'Telepon Utama', type: 'text' },
         { key: 'phone_secondary', label: 'Telepon Darurat', type: 'text' },
         { key: 'business_type', label: 'Tipe Usaha', type: 'text', placeholder: 'Travel, Hotel/Villa, F&B, Retail, dsb.' },
-        { key: 'referral_code', label: 'Kode Referral (opsional)', type: 'text' },
         { key: 'address', label: 'Alamat', type: 'textarea', span2: true },
       ]}
       columns={[
