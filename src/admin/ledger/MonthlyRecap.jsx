@@ -67,7 +67,7 @@ export default function MonthlyRecap() {
       supabase.from('acc_commissions').select('commission_amount').eq('status', 'payable'),
       supabase.from('acc_tax_profile').select('pph_final_rate, pph23_rate').eq('id', 1).maybeSingle(),
       supabase.from('acc_subscriptions').select('amount').eq('status', 'active'),
-      supabase.from('acc_digital_assets').select('domain_name, expiry_date, status').gte('expiry_date', now).lte('expiry_date', addDays(now, 60)).order('expiry_date'),
+      supabase.from('acc_digital_assets').select('domain_name, asset_type, expiry_date, status').gte('expiry_date', now).lte('expiry_date', addDays(now, 60)).order('expiry_date'),
       supabase.from('acc_journal_view').select('entry_date, account_type, debit, credit').in('account_type', ['revenue', 'expense']).gte('entry_date', trendFrom).lte('entry_date', to),
       supabase.from('acc_payments').select('amount_paid').gte('payment_date', from).lte('payment_date', to),
     ])
@@ -220,7 +220,7 @@ export default function MonthlyRecap() {
               <Row label="Retainer aktif per bulan" value={idr(view.mrr)} strong />
               <p className="mb-1 mt-3 text-[11px] text-slate-500">Domain/server jatuh tempo 60 hari ke depan</p>
               {data.assets.map((a, i) => (
-                <Row key={i} label={a.domain_name || '-'} value={formatDate(a.expiry_date)} />
+                <Row key={i} label={`${a.asset_type === 'domain' ? 'Domain' : a.asset_type === 'server' ? 'Server' : 'Layanan'} ${a.domain_name || '-'}`} value={formatDate(a.expiry_date)} />
               ))}
               {data.assets.length === 0 && <p className="text-xs text-slate-500">Tidak ada.</p>}
             </Card>

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import { AlertTriangle, Download, Mail, Plus } from 'lucide-react'
+import { AlertTriangle, Download, Plus } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { sendFinanceEmail } from '../../lib/financeEmail'
 import { useSupabaseTable } from './useSupabaseTable'
 import { logAudit } from './auditLog'
 import { useContent } from '../../context/ContentContext'
 import { invoiceOutstanding } from '../../lib/invoiceUtils'
+import ShareInvoice from '../assets/ShareInvoice'
+import { assetTypeLabel, formatDate } from '../assets/assetUtils'
 
 // Lazy-load jsPDF (lumayan besar) hanya saat tombol unduh benar-benar diklik,
 // supaya tidak ikut membebani bundle awal admin panel.
@@ -97,13 +99,22 @@ function PaymentForm({ invoice, bankAccounts, onDone }) {
   )
 }
 
+const renewalItems = (inv) =>
+  (inv.acc_asset_renewals || [])
+    .filter((r) => r.status !== 'cancelled')
+    .map((r) => ({
+      label: `Perpanjangan ${assetTypeLabel(r.acc_digital_assets?.asset_type)} ${r.acc_digital_assets?.domain_name || ''}`.trim(),
+      note: `Periode ${formatDate(r.period_start)} - ${formatDate(r.period_end)}`,
+      amount: Number(r.sell_price),
+    }))
+
+const SHARE_LABEL = { whatsapp: 'WhatsApp', email: 'Email', link: 'Link', auto_email: 'Email otomatis' }
+
 export default function InvoicesList() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [payingId, setPayingId] = useState(null)
-  const [sendingId, setSendingId] = useState(null)
-  const [notice, setNotice] = useState('')
   const bankAccounts = useSupabaseTable('acc_bank_accounts')
   const { content } = useContent()
   const [qrisUrl, setQrisUrl] = useState('')
@@ -117,7 +128,7 @@ export default function InvoicesList() {
     setLoading(true)
     supabase
       .from('acc_invoices')
-      .select('*, acc_clients(company_name, email, pic_name, address), acc_projects(website_name), acc_invoice_reminder_log(stage), acc_payments(*)')
+      .select('*, acc_clients(company_name, email, pic_name, address, phone_primary), acc_projects(website_name), acc_invoice_reminder_log(stage), acc_payments(*), acc_invoice_shares(channel, created_at), acc_asset_renewals(sell_price, period_start, period_end, status, acc_digital_assets(asset_type, domain_name))')
       .order('created_at', { ascending: false })
       .then(({ data, error: err }) => {
         if (err) setError(err.message)
@@ -139,35 +150,16 @@ export default function InvoicesList() {
     if (data) setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...data } : r)))
   }
 
-  const resendEmail = async (invoice) => {
-    const client = invoice.acc_clients
-    if (!client?.email) return
-    setSendingId(invoice.id)
-    setNotice('')
-    const res = await sendFinanceEmail({
-      type: 'invoice',
-      to: client.email,
-      clientName: client.company_name,
-      docNumber: invoice.invoice_number,
-      amount: invoice.total_amount,
-      dueDate: invoice.due_date,
-      items: [{ label: invoice.acc_projects?.website_name || 'Layanan', amount: invoice.total_amount }],
-    })
-    setNotice(res.ok ? `Email invoice ${invoice.invoice_number} terkirim ulang.` : `Gagal kirim email: ${res.error || 'periksa konfigurasi Resend'}`)
-    setSendingId(null)
-  }
-
   return (
     <div>
       <h2 className="text-lg font-semibold text-white">Invoice & Piutang</h2>
-      <p className="mt-1 text-sm text-slate-400">Pantau status tagihan, catat pelunasan, dan kirim ulang invoice ke email klien kapan saja.</p>
+      <p className="mt-1 text-sm text-slate-400">Pantau status tagihan, catat pelunasan, dan bagikan invoice ke klien lewat WhatsApp, email, atau link.</p>
 
       {error && (
         <p className="mt-3 flex items-center gap-1.5 text-xs text-red-400">
           <AlertTriangle size={14} /> {error}
         </p>
       )}
-      {notice && <p className="mt-3 text-xs text-cyan-300">{notice}</p>}
 
       <div className="mt-4 space-y-3">
         {loading && <p className="text-sm text-slate-400">Memuat...</p>}
@@ -217,10 +209,8 @@ export default function InvoicesList() {
                     <Plus size={13} /> Catat Pembayaran
                   </button>
                 )}
-                <button type="button" disabled={sendingId === inv.id} onClick={() => resendEmail(inv)} className="btn-secondary !px-3 !py-1.5 text-xs disabled:opacity-60">
-                  <Mail size={13} /> {sendingId === inv.id ? 'Mengirim...' : 'Kirim Ulang Email'}
-                </button>
-                <button type="button" onClick={() => downloadInvoicePdf(inv, inv.acc_clients, brand)} className="btn-secondary !px-3 !py-1.5 text-xs">
+                <ShareInvoice invoice={inv} client={inv.acc_clients} onShared={load} />
+                <button type="button" onClick={() => downloadInvoicePdf({ ...inv, items: renewalItems(inv) }, inv.acc_clients, brand)} className="btn-secondary !px-3 !py-1.5 text-xs">
                   <Download size={13} /> Unduh PDF Invoice
                 </button>
               </div>
@@ -271,6 +261,17 @@ export default function InvoicesList() {
               {inv.acc_invoice_reminder_log?.length > 0 && (
                 <p className="mt-2 text-[11px] text-slate-500">
                   Pengingat otomatis terkirim: {inv.acc_invoice_reminder_log.map((r) => r.stage.toUpperCase()).join(', ')}
+                </p>
+              )}
+
+              {inv.acc_invoice_shares?.length > 0 && (
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Dibagikan:{' '}
+                  {[...inv.acc_invoice_shares]
+                    .sort((x, y) => y.created_at.localeCompare(x.created_at))
+                    .slice(0, 4)
+                    .map((sh) => `${SHARE_LABEL[sh.channel]} ${new Date(sh.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`)
+                    .join(' · ')}
                 </p>
               )}
 

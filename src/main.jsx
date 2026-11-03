@@ -7,6 +7,7 @@ import AdminApp from './admin/AdminApp.jsx'
 import SetPasswordPage from './admin/SetPasswordPage.jsx'
 import { initialAuthLinkType } from './lib/supabaseClient'
 import PortalPage from './pages/PortalPage.jsx'
+import InvoicePublicPage from './pages/InvoicePublicPage.jsx'
 import AboutPage from './pages/AboutPage.jsx'
 import PricingOverviewPage from './pages/PricingOverviewPage.jsx'
 import PricingPage from './pages/PricingPage.jsx'
@@ -49,6 +50,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/admin" element={<AdminApp />} />
             <Route path="/admin/set-password" element={<SetPasswordPage />} />
             <Route path="/portal" element={<PortalPage />} />
+            <Route path="/invoice/:token" element={<InvoicePublicPage />} />
           </Routes>
         </BrowserRouter>
       </LanguageProvider>

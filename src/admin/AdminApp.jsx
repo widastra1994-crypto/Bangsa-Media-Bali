@@ -24,7 +24,7 @@ import AccountingDashboard from './accounting/AccountingDashboard'
 import MasterDataEditor from './accounting/MasterDataEditor'
 import TransactionForm from './accounting/TransactionForm'
 import ProjectsList from './accounting/ProjectsList'
-import DigitalAssetsList from './accounting/DigitalAssetsList'
+import DigitalAssetsRecap from './assets/DigitalAssetsRecap'
 import BankReconciliation from './accounting/BankReconciliation'
 import TaxModule from './accounting/TaxModule'
 import AuditTrailViewer from './accounting/AuditTrailViewer'
@@ -74,7 +74,7 @@ const TAB_COMPONENTS = {
   'acc-profitability': ProfitabilityReport,
   'acc-transaction': TransactionForm,
   'acc-projects': ProjectsList,
-  'acc-assets': DigitalAssetsList,
+  'acc-assets': DigitalAssetsRecap,
   'acc-staff-progress': StaffProgressBoard,
   'acc-time-logs': TimeLogsEditor,
   'acc-contracts': ContractsEditor,

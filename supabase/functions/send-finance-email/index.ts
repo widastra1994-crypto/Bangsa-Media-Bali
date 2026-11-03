@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json()
-    const { type, to, clientName, brandName, docNumber, amount, dueDate, items, notes } = body
+    const { type, to, clientName, brandName, docNumber, amount, dueDate, items, notes, link, linkLabel } = body
 
     if (!to || !type || !docNumber) {
       return json({ ok: false, error: 'Data email tidak lengkap.' }, 400)
@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
             <tr><td style="padding:12px 0;font-weight:bold;border-top:2px solid #0f172a;">Total</td><td style="padding:12px 0;text-align:right;font-weight:bold;border-top:2px solid #0f172a;">${formatIDR(amount)}</td></tr>
             ${isInvoice && dueDate ? `<tr><td style="padding:8px 0;color:#64748b;">Jatuh Tempo</td><td style="padding:8px 0;text-align:right;">${dueDate}</td></tr>` : ''}
           </table>
+          ${typeof link === 'string' && link.startsWith('https://') ? `<p style="text-align:center;margin:24px 0;"><a href="${link}" style="background:#0f62fe;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;">${linkLabel || "Lihat & Unduh Invoice"}</a></p>` : ""}
           ${notes ? `<p style="font-size:13px;color:#64748b;">${notes}</p>` : ''}
           <p style="margin-top:24px;font-size:13px;color:#64748b;">Email ini dikirim otomatis oleh sistem ${brand}. Balas email ini jika ada pertanyaan.</p>
         </div>

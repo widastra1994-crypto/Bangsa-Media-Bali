@@ -117,10 +117,25 @@ export async function generateInvoicePdf(invoice, client, brand) {
     server_renewal: 'Perpanjangan Server/Hosting',
     recurring_retainer: 'Layanan Bulanan (Retainer)',
   }
-  doc.text(invoiceTypeLabel[invoice.invoice_type] || 'Layanan', 20, tableTop + 17)
-  doc.text(idr(invoice.subtotal), 175, tableTop + 17, { align: 'right' })
+  // invoice.items (opsional): rincian per layanan, mis. perpanjangan domain & server.
+  const rows = invoice.items?.length ? invoice.items : [{ label: invoiceTypeLabel[invoice.invoice_type] || 'Layanan', amount: invoice.subtotal }]
+  let ry = tableTop + 17
+  rows.forEach((it) => {
+    doc.setFontSize(10)
+    doc.setTextColor(...DARK)
+    doc.text(String(it.label), 20, ry, { maxWidth: 130 })
+    doc.text(idr(it.amount), 175, ry, { align: 'right' })
+    if (it.note) {
+      doc.setFontSize(8.5)
+      doc.setTextColor(...SLATE)
+      doc.text(String(it.note), 20, ry + 5)
+      ry += 5
+    }
+    ry += 9
+  })
+  doc.setTextColor(...DARK)
 
-  let sy = tableTop + 30
+  let sy = ry + 4
   doc.setDrawColor(220, 220, 220)
   doc.line(120, sy - 5, 195, sy - 5)
 

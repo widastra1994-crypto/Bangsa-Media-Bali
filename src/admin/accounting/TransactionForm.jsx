@@ -133,20 +133,47 @@ export default function TransactionForm() {
       if (projectErr) throw new Error(projectErr.message)
       const project = projectRows[0]
 
-      // 3. Aset Digital
-      if (form.domainName || form.domainVendorId || form.serverVendorId || form.websiteUrl || Number(form.domainCost) || Number(form.serverCost)) {
-        const { error: assetErr } = await supabase.from('acc_digital_assets').insert({
-          project_id: project.id,
+      // 3. Aset Digital: domain & server dicatat sebagai aset terpisah karena
+      // masa aktif & perpanjangannya bisa berbeda. Harga jual awal = modal,
+      // ubah di menu Rekap Aset Digital.
+      const assetBase = {
+        project_id: project.id,
+        client_id: clientId,
+        domain_name: form.domainName || form.websiteName || null,
+        registration_date: form.registrationDate || null,
+        expiry_date: form.registrationDate ? addOneYear(form.registrationDate) : null,
+        cycle_months: 12,
+        record_cost: true,
+        status: 'active',
+      }
+      const newAssets = []
+      if (form.domainName || form.domainVendorId || Number(form.domainCost)) {
+        newAssets.push({
+          ...assetBase,
+          asset_type: 'domain',
+          vendor_id: form.domainVendorId || null,
           domain_vendor_id: form.domainVendorId || null,
-          server_vendor_id: form.serverVendorId || null,
-          domain_name: form.domainName || null,
           website_url: form.websiteUrl || null,
-          registration_date: form.registrationDate || null,
-          expiry_date: form.registrationDate ? addOneYear(form.registrationDate) : null,
-          domain_cost: Number(form.domainCost) || 0,
-          server_cost: Number(form.serverCost) || 0,
-          status: 'active',
+          cost_price: Number(form.domainCost) || 0,
+          sell_price: Number(form.domainCost) || 0,
         })
+      }
+      if (form.serverVendorId || Number(form.serverCost)) {
+        newAssets.push({
+          ...assetBase,
+          asset_type: 'server',
+          vendor_id: form.serverVendorId || null,
+          server_vendor_id: form.serverVendorId || null,
+          website_url: newAssets.length ? null : form.websiteUrl || null,
+          cost_price: Number(form.serverCost) || 0,
+          sell_price: Number(form.serverCost) || 0,
+        })
+      }
+      if (newAssets.length === 0 && form.websiteUrl) {
+        newAssets.push({ ...assetBase, asset_type: 'domain', website_url: form.websiteUrl, record_cost: false })
+      }
+      if (newAssets.length) {
+        const { error: assetErr } = await supabase.from('acc_digital_assets').insert(newAssets)
         if (assetErr) throw new Error(assetErr.message)
       }
 

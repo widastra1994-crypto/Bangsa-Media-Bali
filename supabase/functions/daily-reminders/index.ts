@@ -1,8 +1,8 @@
 // Edge Function: daily-reminders
 // Dijalankan otomatis 1x/hari via pg_cron (lihat migrasi akunting_phase3_cron_schedule).
 // Mengirim notifikasi email berjenjang untuk:
-//   A. Perpanjangan Aset Digital: H-60, H-30 (+terbitkan invoice perpanjangan),
-//      H-14, H-7, H-1, Hari H (masuk grace period).
+//   A. Perpanjangan Aset Digital: estimasi H-60, lalu invoice perpanjangan
+//      (diterbitkan database) saat terbit, H-14, H-7, H-1, hari H, H+7.
 //   B. Piutang/Termin Proyek: H-3, Hari H, H+3, H+7 (overdue).
 // Pakai SERVICE ROLE key secara internal (bypass RLS) karena ini job sistem
 // terjadwal, bukan request dari user yang login.
@@ -60,112 +60,104 @@ Deno.serve(async (req) => {
 
     // ------------------------------------------------------------------
     // A. PENGINGAT PERPANJANGAN ASET DIGITAL
+    // Invoice perpanjangan, notifikasi lonceng & status masa tenggang dibuat
+    // oleh fungsi database asset_daily_maintenance() (pg_cron 08.30 WITA).
+    // Di sini hanya mengirim email ke klien.
     // ------------------------------------------------------------------
+    const { data: settings } = await supabase.from('acc_reminder_settings').select('site_url').eq('id', 1).maybeSingle()
+    const siteUrl = (settings?.site_url || 'https://bangsamediabali.com').replace(/\/$/, '')
+    const typeLabel = (t: string) =>
+      ({ domain: 'Domain', server: 'Hosting/Server', ssl: 'SSL', email: 'Email Bisnis' } as Record<string, string>)[t] || 'Layanan'
+
+    // A1. H-60: estimasi biaya perpanjangan.
     const { data: assets } = await supabase
       .from('acc_digital_assets')
-      .select('*, acc_projects(id, website_name, client_id, acc_clients(company_name, email))')
-      .in('status', ['active', 'pending_renewal', 'grace_period'])
+      .select('id, asset_type, domain_name, expiry_date, sell_price, cost_price, acc_clients(company_name, email)')
+      .in('status', ['active', 'pending_renewal'])
       .not('expiry_date', 'is', null)
 
     for (const asset of assets || []) {
-      const client = asset.acc_projects?.acc_clients
+      const client = asset.acc_clients
       if (!client?.email) continue
       const daysLeft = daysBetween(asset.expiry_date)
-      const assetLabel = asset.domain_name || asset.acc_projects?.website_name || 'Aset Digital'
-      const renewalCost = (Number(asset.domain_cost) || 0) + (Number(asset.server_cost) || 0)
+      if (daysLeft > 60 || daysLeft <= 30) continue
+      const { error: logErr } = await supabase
+        .from('acc_asset_reminder_log')
+        .insert({ asset_id: asset.id, stage: 'h60', expiry_date: asset.expiry_date })
+      if (logErr) continue // sudah pernah terkirim siklus ini
+      const label = `${typeLabel(asset.asset_type)} ${asset.domain_name || ''}`.trim()
+      const price = Number(asset.sell_price) || Number(asset.cost_price) || 0
+      const html = wrapEmail(
+        brand,
+        'Estimasi Perpanjangan Layanan',
+        `<p>Yth. <strong>${client.company_name}</strong>,</p>
+         <p>Layanan <strong>${label}</strong> akan berakhir dalam <strong>${daysLeft} hari</strong> (${asset.expiry_date}).</p>
+         <p>Estimasi biaya perpanjangan: <strong>${idr(price)}</strong>. Invoice resmi akan kami kirimkan 30 hari sebelum masa aktif berakhir.</p>`,
+      )
+      if (await sendEmail(client.email, `Estimasi Perpanjangan ${label}`, html)) assetEmailsSent++
+    }
 
-      const tryLogStage = async (stage: string) => {
-        const { error } = await supabase
-          .from('acc_asset_reminder_log')
-          .insert({ asset_id: asset.id, stage, expiry_date: asset.expiry_date })
-        return !error // false kalau sudah pernah terkirim (unique constraint bentrok)
+    // A2. Invoice perpanjangan: kirim saat terbit, lalu H-14, H-7, H-1, hari H, dan H+7.
+    const { data: renewalInvoices } = await supabase
+      .from('acc_invoices')
+      .select('*, acc_clients(company_name, email), acc_asset_renewals(sell_price, period_start, period_end, status, acc_digital_assets(asset_type, domain_name))')
+      .in('invoice_type', ['domain_renewal', 'server_renewal'])
+      .in('status', ['sent', 'partial', 'overdue'])
+
+    for (const inv of renewalInvoices || []) {
+      const items = (inv.acc_asset_renewals || []).filter((r: { status: string }) => r.status !== 'cancelled')
+      if (items.length === 0) continue
+      const client = inv.acc_clients
+      if (!client?.email) continue
+      const outstanding = Number(inv.total_amount) - Number(inv.pph23_amount || 0) - Number(inv.paid_amount)
+      if (outstanding <= 0) continue
+      const daysLeft = inv.due_date ? daysBetween(inv.due_date) : 0
+
+      if (daysLeft < 0 && inv.status !== 'overdue') {
+        await supabase.from('acc_invoices').update({ status: 'overdue' }).eq('id', inv.id)
       }
 
-      if (daysLeft <= 60 && daysLeft > 30) {
-        if (await tryLogStage('h60')) {
-          const html = wrapEmail(
-            brand,
-            'Estimasi Perpanjangan Aset Tahun Depan',
-            `<p>Yth. <strong>${client.company_name}</strong>,</p>
-             <p>Aset digital <strong>${assetLabel}</strong> akan memasuki masa perpanjangan dalam <strong>${daysLeft} hari</strong> (${asset.expiry_date}).</p>
-             <p>Estimasi biaya perpanjangan tahun depan: <strong>${idr(renewalCost)}</strong>. Invoice resmi akan kami kirimkan mendekati tanggal jatuh tempo.</p>`,
-          )
-          if (await sendEmail(client.email, `Estimasi Perpanjangan ${assetLabel}`, html)) assetEmailsSent++
-        }
-      } else if (daysLeft <= 30 && daysLeft > 14) {
-        if (await tryLogStage('h30')) {
-          // Terbitkan invoice perpanjangan otomatis + kirim sebagai tagihan resmi.
-          const dueDate = new Date().toISOString().slice(0, 10)
-          const invoiceType = Number(asset.server_cost) > 0 && !(Number(asset.domain_cost) > 0) ? 'server_renewal' : 'domain_renewal'
-          const { data: invRows } = await supabase
-            .from('acc_invoices')
-            .insert({
-              project_id: asset.project_id,
-              client_id: asset.acc_projects.client_id,
-              invoice_type: invoiceType,
-              subtotal: renewalCost,
-              total_amount: renewalCost,
-              due_date: asset.expiry_date,
-              status: 'sent',
-            })
-            .select()
-          const invoice = invRows?.[0]
-          await supabase.from('acc_digital_assets').update({ status: 'pending_renewal' }).eq('id', asset.id)
-          const html = wrapEmail(
-            brand,
-            'Surat Tagihan Perpanjangan',
-            `<p>Yth. <strong>${client.company_name}</strong>,</p>
-             <p>Berikut tagihan resmi perpanjangan <strong>${assetLabel}</strong>, jatuh tempo <strong>${asset.expiry_date}</strong>.</p>
-             <p>Nomor Invoice: <strong>${invoice?.invoice_number || '-'}</strong><br/>Total: <strong>${idr(renewalCost)}</strong></p>
-             <p>Silakan lakukan pembayaran melalui transfer bank atau QRIS sebelum tanggal jatuh tempo agar layanan tidak terganggu.</p>`,
-          )
-          if (await sendEmail(client.email, `Invoice Perpanjangan ${assetLabel} - ${invoice?.invoice_number || ''}`, html)) assetEmailsSent++
-        }
-      } else if (daysLeft <= 14 && daysLeft > 7) {
-        if (await tryLogStage('h14')) {
-          const html = wrapEmail(
-            brand,
-            'Konfirmasi Status Pembayaran Perpanjangan',
-            `<p>Yth. <strong>${client.company_name}</strong>,</p>
-             <p>Kami ingin memastikan status pembayaran tagihan perpanjangan <strong>${assetLabel}</strong> yang jatuh tempo <strong>${asset.expiry_date}</strong>.</p>
-             <p>Jika sudah dibayar, abaikan email ini. Jika belum, mohon segera diselesaikan agar layanan tetap aktif.</p>`,
-          )
-          if (await sendEmail(client.email, `Konfirmasi Pembayaran Perpanjangan ${assetLabel}`, html)) assetEmailsSent++
-        }
-      } else if (daysLeft <= 7 && daysLeft > 1) {
-        if (await tryLogStage('h7')) {
-          const html = wrapEmail(
-            brand,
-            '⚠️ Peringatan: Masa Aktif Akan Berakhir',
-            `<p>Yth. <strong>${client.company_name}</strong>,</p>
-             <p><strong>${assetLabel}</strong> akan berakhir masa aktifnya dalam <strong>${daysLeft} hari</strong> (${asset.expiry_date}).</p>
-             <p>Jika tagihan perpanjangan belum dibayar, website/layanan Anda berisiko disuspend. Mohon segera lakukan pembayaran.</p>`,
-          )
-          if (await sendEmail(client.email, `PENTING: ${assetLabel} Akan Berakhir dalam ${daysLeft} Hari`, html)) assetEmailsSent++
-        }
-      } else if (daysLeft === 1) {
-        if (await tryLogStage('h1')) {
-          const html = wrapEmail(
-            brand,
-            '🚨 Peringatan Terakhir: Besok Masa Aktif Berakhir',
-            `<p>Yth. <strong>${client.company_name}</strong>,</p>
-             <p>Ini adalah peringatan terakhir. <strong>${assetLabel}</strong> akan berakhir <strong>besok (${asset.expiry_date})</strong>.</p>
-             <p>Mohon segera lakukan pembayaran hari ini untuk menghindari gangguan layanan.</p>`,
-          )
-          if (await sendEmail(client.email, `URGENT: ${assetLabel} Berakhir Besok`, html)) assetEmailsSent++
-        }
-      } else if (daysLeft <= 0) {
-        if (await tryLogStage('h0')) {
-          await supabase.from('acc_digital_assets').update({ status: 'grace_period' }).eq('id', asset.id)
-          const html = wrapEmail(
-            brand,
-            'Layanan Memasuki Masa Tenggang',
-            `<p>Yth. <strong>${client.company_name}</strong>,</p>
-             <p><strong>${assetLabel}</strong> telah memasuki masa tenggang (grace period) karena masa aktif telah berakhir pada ${asset.expiry_date}.</p>
-             <p>Segera lakukan pembayaran untuk menghindari penghentian layanan permanen.</p>`,
-          )
-          if (await sendEmail(client.email, `${assetLabel} Memasuki Masa Tenggang`, html)) assetEmailsSent++
-        }
+      const stage = daysLeft <= -7 ? 'r+7' : daysLeft <= 0 ? 'r-0' : daysLeft <= 1 ? 'r-1' : daysLeft <= 7 ? 'r-7' : daysLeft <= 14 ? 'r-14' : null
+      const { data: sentLogs } = await supabase.from('acc_invoice_reminder_log').select('stage').eq('invoice_id', inv.id)
+      const sent = new Set((sentLogs || []).map((l: { stage: string }) => l.stage))
+      const isFirst = !sent.has('r-issued')
+      if (!isFirst && (!stage || sent.has(stage))) continue
+
+      const link = `${siteUrl}/invoice/${inv.public_token}`
+      const rows = items
+        .map(
+          (r: { sell_price: number; period_start: string; period_end: string; acc_digital_assets: { asset_type: string; domain_name: string } }) => `
+            <tr>
+              <td style="padding:8px 0;border-bottom:1px solid #eee;">${typeLabel(r.acc_digital_assets?.asset_type)} ${r.acc_digital_assets?.domain_name || ''}<br/>
+                <span style="font-size:12px;color:#64748b;">Periode ${r.period_start} s/d ${r.period_end}</span></td>
+              <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;">${idr(r.sell_price)}</td>
+            </tr>`,
+        )
+        .join('')
+      const when =
+        daysLeft > 1 ? `jatuh tempo dalam <strong>${daysLeft} hari</strong> (${inv.due_date})`
+        : daysLeft === 1 ? `jatuh tempo <strong>besok</strong> (${inv.due_date})`
+        : daysLeft === 0 ? `jatuh tempo <strong>hari ini</strong>`
+        : `telah melewati jatuh tempo <strong>${Math.abs(daysLeft)} hari</strong>. Layanan berisiko dihentikan`
+      const heading = isFirst ? 'Invoice Perpanjangan Layanan' : daysLeft < 0 ? 'Layanan Melewati Masa Aktif' : 'Pengingat Perpanjangan Layanan'
+      const html = wrapEmail(
+        brand,
+        heading,
+        `<p>Yth. <strong>${client.company_name}</strong>,</p>
+         <p>Tagihan perpanjangan <strong>${inv.invoice_number}</strong> ${when}.</p>
+         <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">
+           ${rows}
+           <tr><td style="padding:12px 0;font-weight:bold;">Sisa tagihan</td><td style="padding:12px 0;text-align:right;font-weight:bold;">${idr(outstanding)}</td></tr>
+         </table>
+         <p style="text-align:center;margin:24px 0;"><a href="${link}" style="background:#0f62fe;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;">Lihat &amp; Unduh Invoice</a></p>
+         <p style="font-size:13px;color:#64748b;">Jika sudah membayar, abaikan email ini.</p>`,
+      )
+      const subject = isFirst ? `Invoice Perpanjangan ${inv.invoice_number}` : `Pengingat: Invoice Perpanjangan ${inv.invoice_number}`
+      if (await sendEmail(client.email, subject, html)) {
+        invoiceEmailsSent++
+        const logs = isFirst ? ['r-issued', stage].filter(Boolean) : [stage]
+        for (const s of logs) await supabase.from('acc_invoice_reminder_log').insert({ invoice_id: inv.id, stage: s })
+        await supabase.from('acc_invoice_shares').insert({ invoice_id: inv.id, channel: 'auto_email', shared_by: null })
       }
     }
 
@@ -174,13 +166,15 @@ Deno.serve(async (req) => {
     // ------------------------------------------------------------------
     const { data: invoices } = await supabase
       .from('acc_invoices')
-      .select('*, acc_clients(company_name, email), acc_projects(website_name)')
+      .select('*, acc_clients(company_name, email), acc_projects(website_name), acc_asset_renewals(id)')
       .in('status', ['sent', 'partial', 'overdue'])
       .not('due_date', 'is', null)
 
     for (const inv of invoices || []) {
       const client = inv.acc_clients
       if (!client?.email) continue
+      // Invoice perpanjangan aset sudah diurus di bagian A.
+      if (inv.acc_asset_renewals?.length) continue
       const outstanding = Number(inv.total_amount) - Number(inv.pph23_amount || 0) - Number(inv.paid_amount)
       if (outstanding <= 0) continue
       const daysLeft = daysBetween(inv.due_date)

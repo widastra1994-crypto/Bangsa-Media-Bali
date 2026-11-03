@@ -71,7 +71,7 @@ export const MENU_GROUPS = [
     tabs: [
       { id: 'acc-transaction', label: 'Transaksi Baru', icon: FilePlus2, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-projects', label: 'Daftar Proyek', icon: FolderOpen, roles: null },
-      { id: 'acc-assets', label: 'Aset Digital', icon: Globe, roles: null },
+      { id: 'acc-assets', label: 'Rekap Aset Digital', icon: Globe, roles: null },
       { id: 'acc-staff-progress', label: 'Progres Staf', icon: ListChecks, roles: null },
       { id: 'acc-time-logs', label: 'Jam Kerja Staf', icon: Clock, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-contracts', label: 'Kontrak & SPK Digital', icon: FileSignature, roles: ['owner', 'admin'] },

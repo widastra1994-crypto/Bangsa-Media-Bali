@@ -26,6 +26,7 @@ const INVOICE_STATUS_COLOR = {
   cancelled: 'bg-slate-100 text-slate-500 border-slate-200',
 }
 const PROJECT_STATUS_LABEL = { planning: 'Perencanaan', in_progress: 'Sedang Dikerjakan', completed: 'Selesai', cancelled: 'Batal' }
+const ASSET_TYPE_LABEL = { domain: 'Domain', server: 'Hosting/Server', ssl: 'SSL', email: 'Email Bisnis', other: 'Layanan' }
 const ASSET_STATUS_LABEL = { active: 'Aktif', pending_renewal: 'Menunggu Perpanjangan', grace_period: 'Masa Tenggang', expired: 'Kedaluwarsa', terminated: 'Dihentikan' }
 
 function LoginForm() {
@@ -174,11 +175,8 @@ function Dashboard({ session }) {
       ])
       setProjects(proj.data || [])
       setInvoices(inv.data || [])
-      const projectIds = (proj.data || []).map((p) => p.id)
-      if (projectIds.length > 0) {
-        const { data: assetRows } = await supabase.from('acc_digital_assets').select('*').in('project_id', projectIds)
-        setAssets(assetRows || [])
-      }
+      const { data: assetRows } = await supabase.from('acc_digital_assets').select('*').eq('client_id', clientRow.id).order('expiry_date')
+      setAssets(assetRows || [])
       const { data: contractRows } = await supabase.from('acc_contracts').select('*').eq('client_id', clientRow.id).order('created_at', { ascending: false })
       setContracts(contractRows || [])
       setLoading(false)
@@ -264,7 +262,8 @@ function Dashboard({ session }) {
       <div className="space-y-3">
         {projects.length === 0 && <p className="text-sm text-slate-500">Belum ada proyek tercatat.</p>}
         {projects.map((p) => {
-          const asset = assets.find((a) => a.project_id === p.id)
+          const projectAssets = assets.filter((a) => a.project_id === p.id)
+          const siteUrl = projectAssets.find((a) => a.website_url)?.website_url
           return (
             <div key={p.id} className="rounded-2xl border border-sky-100 bg-white/80 p-4 shadow-card">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -273,18 +272,20 @@ function Dashboard({ session }) {
                   {PROJECT_STATUS_LABEL[p.status]}
                 </span>
               </div>
-              {asset && (
+              {projectAssets.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
-                  {asset.website_url && (
-                    <a href={asset.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-cyan-royal">
+                  {siteUrl && (
+                    <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-cyan-royal">
                       <Globe size={12} /> Kunjungi Website
                     </a>
                   )}
-                  {asset.expiry_date && (
-                    <span className="flex items-center gap-1">
-                      <Calendar size={12} /> Masa Aktif s/d {asset.expiry_date} ({ASSET_STATUS_LABEL[asset.status]})
-                    </span>
-                  )}
+                  {projectAssets
+                    .filter((a) => a.expiry_date)
+                    .map((a) => (
+                      <span key={a.id} className="flex items-center gap-1">
+                        <Calendar size={12} /> {ASSET_TYPE_LABEL[a.asset_type] || 'Layanan'} aktif s/d {a.expiry_date} ({ASSET_STATUS_LABEL[a.status]})
+                      </span>
+                    ))}
                 </div>
               )}
               <ProjectProgress projectId={p.id} />
@@ -292,6 +293,26 @@ function Dashboard({ session }) {
           )
         })}
       </div>
+
+      {assets.some((a) => !a.project_id) && (
+        <>
+          <h2 className="mb-3 mt-8 text-sm font-semibold uppercase tracking-wide text-gold-deep">Domain & Server Saya</h2>
+          <div className="space-y-2">
+            {assets
+              .filter((a) => !a.project_id)
+              .map((a) => (
+                <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-sky-100 bg-white/80 px-4 py-3 text-xs shadow-card">
+                  <span className="font-semibold text-ink">
+                    {ASSET_TYPE_LABEL[a.asset_type] || 'Layanan'} {a.domain_name}
+                  </span>
+                  <span className="flex items-center gap-1 text-slate-600">
+                    <Calendar size={12} /> Aktif s/d {a.expiry_date || '-'} ({ASSET_STATUS_LABEL[a.status]})
+                  </span>
+                </div>
+              ))}
+          </div>
+        </>
+      )}
 
       <h2 className="mb-3 mt-8 text-sm font-semibold uppercase tracking-wide text-gold-deep">Invoice & Riwayat Pembayaran</h2>
       <div className="space-y-3">
