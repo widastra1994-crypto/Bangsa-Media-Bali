@@ -89,7 +89,6 @@ function DeleteProjectDialog({ project, onClose, onDeleted }) {
           </>
         )}
         {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
-      {notice && <p className="mt-3 text-xs text-cyan-300">{notice}</p>}
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-secondary !py-2 text-xs">
             Batal
@@ -175,6 +174,7 @@ export default function ProjectsList() {
       </div>
 
       {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+      {notice && <p className="mt-3 text-xs text-cyan-300">{notice}</p>}
 
       <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
         <table className="w-full text-left text-xs">
