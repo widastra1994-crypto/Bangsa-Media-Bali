@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
-import { ChevronDown, ChevronUp, Download } from 'lucide-react'
+import { ChevronDown, ChevronUp, Download, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { exportToCsv } from './csvExport'
 import { useUserRole } from '../useUserRole'
@@ -16,6 +16,98 @@ const STATUS_COLOR = {
   cancelled: 'bg-red-500/20 text-red-300 border-red-400/30',
 }
 
+// Konfirmasi hapus proyek Batal: tampilkan dulu semua data yang ikut terhapus
+// (ringkasan dari project_delete dry-run), baru hapus permanen.
+function DeleteProjectDialog({ project, onClose, onDeleted }) {
+  const [summary, setSummary] = useState(null)
+  const [error, setError] = useState('')
+  const [confirmText, setConfirmText] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    supabase.rpc('project_delete', { p_project_id: project.id, p_dry_run: true }).then(({ data, error: err }) => {
+      if (err) setError(err.message)
+      else setSummary(data)
+    })
+  }, [project.id])
+
+  const remove = async () => {
+    setBusy(true)
+    const { error: err } = await supabase.rpc('project_delete', { p_project_id: project.id, p_dry_run: false })
+    setBusy(false)
+    if (err) return setError(err.message)
+    onDeleted(project)
+  }
+
+  const items = summary
+    ? [
+        [summary.invoices, `invoice (total ${idr(summary.invoice_total)})`],
+        [summary.payments, `pembayaran klien (${idr(summary.payment_total)})`],
+        [summary.expenses, `pengeluaran (${idr(summary.expense_total)})`],
+        [summary.commissions, `komisi staf${summary.commissions_paid ? `, ${summary.commissions_paid} sudah dibayar` : ''}`],
+        [summary.assets, 'aset digital (domain/server)'],
+        [summary.contracts, 'kontrak'],
+        [summary.subscriptions, 'langganan bulanan'],
+        [summary.tasks, 'tugas proyek'],
+      ].filter(([n]) => Number(n) > 0)
+    : []
+  const name = project.website_name || 'HAPUS'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
+      <div className="glass-panel w-full max-w-lg rounded-2xl p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold text-white">Hapus Proyek {project.website_name}</h3>
+          <button type="button" onClick={onClose} className="text-slate-500 hover:text-white" aria-label="Tutup">
+            <X size={18} />
+          </button>
+        </div>
+        {!summary && !error && <p className="mt-4 text-sm text-slate-400">Memeriksa data terkait...</p>}
+        {summary && (
+          <>
+            <p className="mt-3 text-sm text-slate-300">
+              Proyek ini dan semua data di bawah akan dihapus permanen, termasuk jurnalnya di Buku Besar. Proyek tidak lagi dihitung di piutang maupun laporan.
+            </p>
+            <ul className="mt-3 space-y-1 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
+              {items.length === 0 && <li>Tidak ada data terkait selain proyeknya.</li>}
+              {items.map(([n, label]) => (
+                <li key={label}>
+                  • <b>{n}</b> {label}
+                </li>
+              ))}
+            </ul>
+            {Number(summary.payments) > 0 && (
+              <p className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                Ada pembayaran klien yang ikut terhapus, sehingga saldo kas di laporan berkurang {idr(summary.payment_total)}. Kalau uang itu benar-benar diterima
+                dan tidak dikembalikan, jangan hapus proyek ini.
+              </p>
+            )}
+            <label className="label-field mt-4">
+              Ketik <b>{name}</b> untuk konfirmasi
+            </label>
+            <input className="input-field" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} />
+          </>
+        )}
+        {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+      {notice && <p className="mt-3 text-xs text-cyan-300">{notice}</p>}
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="btn-secondary !py-2 text-xs">
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={remove}
+            disabled={!summary || busy || confirmText.trim() !== name}
+            className="btn-primary !bg-red-600 !py-2 text-xs disabled:opacity-50"
+          >
+            <Trash2 size={13} /> {busy ? 'Menghapus...' : 'Hapus Permanen'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ProjectsList() {
   const { role, isOwnerOrAdmin } = useUserRole()
   const [rows, setRows] = useState([])
@@ -23,6 +115,8 @@ export default function ProjectsList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [expandedId, setExpandedId] = useState(null)
+  const [deleting, setDeleting] = useState(null)
+  const [notice, setNotice] = useState('')
 
   const load = useCallback(() => {
     setLoading(true)
@@ -152,13 +246,25 @@ export default function ProjectsList() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setExpandedId(expanded ? null : row.id)}
-                        className="flex items-center gap-1 text-[11px] font-semibold text-cyan-royal hover:text-cyan-300"
-                      >
-                        {expanded ? 'Tutup' : 'Kelola'} {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedId(expanded ? null : row.id)}
+                          className="flex items-center gap-1 text-[11px] font-semibold text-cyan-royal hover:text-cyan-300"
+                        >
+                          {expanded ? 'Tutup' : 'Kelola'} {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                        </button>
+                        {isOwnerOrAdmin && row.status === 'cancelled' && (
+                          <button
+                            type="button"
+                            onClick={() => setDeleting(row)}
+                            className="flex items-center gap-1 text-[11px] font-semibold text-red-500 hover:text-red-400"
+                            title="Hapus proyek batal beserta invoice & datanya"
+                          >
+                            <Trash2 size={13} /> Hapus
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                   {expanded && (
@@ -179,6 +285,19 @@ export default function ProjectsList() {
           </tbody>
         </table>
       </div>
+      {isOwnerOrAdmin && <p className="mt-2 text-[11px] text-slate-500">Tombol Hapus muncul setelah status proyek diubah menjadi Batal.</p>}
+
+      {deleting && (
+        <DeleteProjectDialog
+          project={deleting}
+          onClose={() => setDeleting(null)}
+          onDeleted={(p) => {
+            setDeleting(null)
+            setRows((prev) => prev.filter((r) => r.id !== p.id))
+            setNotice(`Proyek ${p.website_name || ''} beserta datanya sudah dihapus.`)
+          }}
+        />
+      )}
     </div>
   )
 }
