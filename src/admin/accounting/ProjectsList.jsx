@@ -82,6 +82,12 @@ function DeleteProjectDialog({ project, onClose, onDeleted }) {
                 dan tidak dikembalikan, jangan hapus proyek ini.
               </p>
             )}
+            {summary.status !== 'cancelled' && (
+              <p className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                Status proyek ini masih <b>{STATUS_LABEL[summary.status] || summary.status}</b>, belum Batal. Pastikan proyek ini memang salah input atau
+                tidak jadi, karena pendapatannya akan hilang dari laporan.
+              </p>
+            )}
             <label className="label-field mt-4">
               Ketik <b>{name}</b> untuk konfirmasi
             </label>
@@ -254,12 +260,12 @@ export default function ProjectsList() {
                         >
                           {expanded ? 'Tutup' : 'Kelola'} {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                         </button>
-                        {isOwnerOrAdmin && row.status === 'cancelled' && (
+                        {isOwnerOrAdmin && (
                           <button
                             type="button"
                             onClick={() => setDeleting(row)}
                             className="flex items-center gap-1 text-[11px] font-semibold text-red-500 hover:text-red-400"
-                            title="Hapus proyek batal beserta invoice & datanya"
+                            title="Hapus proyek beserta invoice & datanya"
                           >
                             <Trash2 size={13} /> Hapus
                           </button>
@@ -285,7 +291,6 @@ export default function ProjectsList() {
           </tbody>
         </table>
       </div>
-      {isOwnerOrAdmin && <p className="mt-2 text-[11px] text-slate-500">Tombol Hapus muncul setelah status proyek diubah menjadi Batal.</p>}
 
       {deleting && (
         <DeleteProjectDialog

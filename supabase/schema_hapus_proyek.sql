@@ -1,6 +1,6 @@
 -- ============================================================================
--- HAPUS PROYEK BATAL
--- project_delete(id, dry_run): Owner/Admin menghapus proyek berstatus Batal
+-- HAPUS PROYEK
+-- project_delete(id, dry_run): Owner/Admin menghapus proyek (status apa pun)
 -- beserta invoice, pembayaran, pengeluaran, komisi, aset digital, kontrak,
 -- langganan, tugas & jam kerja. Jurnal Buku Besar ikut terhapus lewat trigger
 -- masing-masing tabel, sehingga proyek hilang dari piutang & semua laporan.
@@ -23,9 +23,6 @@ begin
   from public.acc_projects pr left join public.acc_clients c on c.id = pr.client_id
   where pr.id = p_project_id;
   if not found then raise exception 'Proyek tidak ditemukan.'; end if;
-  if p.status <> 'cancelled' then
-    raise exception 'Ubah status proyek menjadi Batal dulu sebelum menghapus.';
-  end if;
 
   select array_agg(y.id) into v_payment_ids
   from public.acc_payments y join public.acc_invoices i on i.id = y.invoice_id
@@ -34,6 +31,7 @@ begin
   v_summary := jsonb_build_object(
     'project', coalesce(p.website_name, '-'),
     'client', coalesce(p.company_name, '-'),
+    'status', p.status,
     'invoices', (select count(*) from public.acc_invoices where project_id = p_project_id),
     'invoice_total', (select coalesce(sum(total_amount), 0) from public.acc_invoices where project_id = p_project_id),
     'payments', coalesce(array_length(v_payment_ids, 1), 0),
