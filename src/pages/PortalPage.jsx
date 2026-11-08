@@ -26,7 +26,7 @@ const INVOICE_STATUS_COLOR = {
   cancelled: 'bg-slate-100 text-slate-500 border-slate-200',
 }
 const PROJECT_STATUS_LABEL = { planning: 'Perencanaan', in_progress: 'Sedang Dikerjakan', completed: 'Selesai', cancelled: 'Batal' }
-const ASSET_TYPE_LABEL = { domain: 'Domain', server: 'Hosting/Server', ssl: 'SSL', email: 'Email Bisnis', other: 'Layanan' }
+const ASSET_TYPE_LABEL = { domain: 'Domain', server: 'Hosting/Server', ssl: 'SSL', email: 'Email Bisnis', subscription: 'Langganan/Lisensi', other: 'Layanan' }
 const ASSET_STATUS_LABEL = { active: 'Aktif', pending_renewal: 'Menunggu Perpanjangan', grace_period: 'Masa Tenggang', expired: 'Kedaluwarsa', terminated: 'Dihentikan' }
 
 function LoginForm() {

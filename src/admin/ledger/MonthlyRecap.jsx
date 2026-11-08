@@ -220,7 +220,7 @@ export default function MonthlyRecap() {
               <Row label="Retainer aktif per bulan" value={idr(view.mrr)} strong />
               <p className="mb-1 mt-3 text-[11px] text-slate-500">Domain/server jatuh tempo 60 hari ke depan</p>
               {data.assets.map((a, i) => (
-                <Row key={i} label={`${a.asset_type === 'domain' ? 'Domain' : a.asset_type === 'server' ? 'Server' : 'Layanan'} ${a.domain_name || '-'}`} value={formatDate(a.expiry_date)} />
+                <Row key={i} label={`${a.asset_type === 'domain' ? 'Domain' : a.asset_type === 'server' ? 'Server' : a.asset_type === 'subscription' ? 'Langganan' : 'Layanan'} ${a.domain_name || '-'}`} value={formatDate(a.expiry_date)} />
               ))}
               {data.assets.length === 0 && <p className="text-xs text-slate-500">Tidak ada.</p>}
             </Card>

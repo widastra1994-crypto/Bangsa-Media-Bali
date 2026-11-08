@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabaseClient'
-import { invoiceOutstanding } from '../../lib/invoiceUtils'
+import { invoiceOutstanding, renewalLines } from '../../lib/invoiceUtils'
 
 export const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -8,6 +8,7 @@ export const ASSET_TYPES = [
   { value: 'server', label: 'Hosting/Server' },
   { value: 'ssl', label: 'SSL' },
   { value: 'email', label: 'Email Bisnis' },
+  { value: 'subscription', label: 'Langganan / Lisensi' },
   { value: 'other', label: 'Lainnya' },
 ]
 export const assetTypeLabel = (t) => ASSET_TYPES.find((a) => a.value === t)?.label || 'Layanan'
@@ -94,18 +95,14 @@ export async function fetchInvoiceItems(invoiceId) {
     supabase.from('acc_invoice_items').select('description, amount, sort').eq('invoice_id', invoiceId).order('sort'),
     supabase
       .from('acc_asset_renewals')
-      .select('sell_price, period_start, period_end, status, acc_digital_assets(asset_type, domain_name)')
+      .select('sell_price, period_start, period_end, status, lines, acc_digital_assets(asset_type, domain_name)')
       .eq('invoice_id', invoiceId)
       .neq('status', 'cancelled')
       .order('created_at'),
   ])
   return [
     ...(extra.data || []).map((it) => ({ label: it.description, amount: Number(it.amount) })),
-    ...(renewals.data || []).map((r) => ({
-      label: `${assetTypeLabel(r.acc_digital_assets?.asset_type)} ${r.acc_digital_assets?.domain_name || ''}`.trim(),
-      note: `Periode ${formatDate(r.period_start)} - ${formatDate(r.period_end)}`,
-      amount: Number(r.sell_price),
-    })),
+    ...(renewals.data || []).flatMap((r) => renewalLines(r)),
   ]
 }
 

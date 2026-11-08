@@ -118,7 +118,7 @@ export default function InvoicesList() {
     setLoading(true)
     supabase
       .from('acc_invoices')
-      .select('*, acc_clients(company_name, email, pic_name, address, phone_primary), acc_projects(website_name), acc_invoice_reminder_log(stage), acc_payments(*), acc_invoice_shares(channel, created_at), acc_asset_renewals(sell_price, period_start, period_end, status, acc_digital_assets(asset_type, domain_name)), ' + INVOICE_ITEMS_SELECT)
+      .select('*, acc_clients(company_name, email, pic_name, address, phone_primary), acc_projects(website_name), acc_invoice_reminder_log(stage), acc_payments(*), acc_invoice_shares(channel, created_at), acc_asset_renewals(sell_price, period_start, period_end, status, lines, acc_digital_assets(asset_type, domain_name)), ' + INVOICE_ITEMS_SELECT)
       .order('created_at', { ascending: false })
       .then(({ data, error: err }) => {
         if (err) setError(err.message)

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Trash2, X } from 'lucide-react'
+import { Plus, RefreshCw, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
-import { ASSET_TYPES, CYCLES, STATUS_LABEL } from './assetUtils'
+import { ASSET_TYPES, CYCLES, STATUS_LABEL, assetTypeLabel, cycleLabel, idr } from './assetUtils'
 
 const EMPTY = {
   asset_type: 'domain',
@@ -28,6 +28,59 @@ function addMonths(dateStr, months) {
   return d.toISOString().slice(0, 10)
 }
 
+const emptyLine = () => ({ description: '', cost_price: '', sell_price: '' })
+
+// Rincian biaya perpanjangan: semua baris ikut masuk ke setiap invoice
+// perpanjangan (mis. hosting + backup + email bisnis + lisensi).
+function PriceItemsEditor({ lines, onChange, cycleMonths }) {
+  const update = (i, patch) => onChange(lines.map((l, idx) => (idx === i ? { ...l, ...patch } : l)))
+  const cost = lines.reduce((s, l) => s + (Number(l.cost_price) || 0), 0)
+  const sell = lines.reduce((s, l) => s + (Number(l.sell_price) || 0), 0)
+  return (
+    <div className="rounded-2xl border-2 border-cyan-royal/40 p-4">
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-cyan-royal">
+        <RefreshCw size={14} /> Rincian Perpanjangan
+      </p>
+      <p className="mt-0.5 text-[11px] text-slate-500">Semua baris ini otomatis masuk ke invoice setiap kali perpanjangan.</p>
+      <div className="mt-3 hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1fr)_24px] gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 sm:grid">
+        <span>Keterangan</span>
+        <span>Modal</span>
+        <span>Jual ke klien</span>
+        <span />
+      </div>
+      <div className="mt-1 space-y-2">
+        {lines.map((l, i) => (
+          <div key={i} className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1fr)_24px]">
+            <input
+              className="input-field col-span-2 sm:col-span-1"
+              placeholder="mis. Backup harian, Email bisnis, Lisensi plugin"
+              value={l.description}
+              onChange={(e) => update(i, { description: e.target.value })}
+            />
+            <input type="number" min="0" className="input-field" placeholder="Modal" value={l.cost_price} onChange={(e) => update(i, { cost_price: e.target.value })} />
+            <input type="number" min="0" className="input-field" placeholder="Jual" value={l.sell_price} onChange={(e) => update(i, { sell_price: e.target.value })} />
+            <button
+              type="button"
+              onClick={() => onChange(lines.length > 1 ? lines.filter((_, idx) => idx !== i) : [emptyLine()])}
+              className="col-span-2 justify-self-end text-slate-500 hover:text-red-400 sm:col-span-1"
+              aria-label="Hapus baris"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <button type="button" onClick={() => onChange([...lines, emptyLine()])} className="mt-3 flex items-center gap-1 text-xs font-semibold text-cyan-royal hover:underline">
+        <Plus size={13} /> Tambah baris perpanjangan
+      </button>
+      <p className="mt-3 text-xs text-slate-400">
+        Total per {cycleLabel(cycleMonths).toLowerCase()}: jual <b className="text-white">{idr(sell)}</b> · modal {idr(cost)} · margin{' '}
+        <b className={sell - cost >= 0 ? 'text-emerald-400' : 'text-red-400'}>{idr(sell - cost)}</b>
+      </p>
+    </div>
+  )
+}
+
 function Field({ label, hint, children, className = '' }) {
   return (
     <div className={className}>
@@ -45,6 +98,12 @@ export default function AssetForm({ asset, clients, projects, vendors, canDelete
       ? { ...EMPTY, ...asset }
       : Object.fromEntries(Object.keys(EMPTY).map((k) => [k, asset[k] ?? EMPTY[k]])),
   )
+  const [lines, setLines] = useState(() => {
+    const existing = [...(asset?.acc_asset_price_items || [])].sort((a, b) => a.sort - b.sort)
+    return existing.length
+      ? existing.map((l) => ({ description: l.description, cost_price: Number(l.cost_price), sell_price: Number(l.sell_price) }))
+      : [emptyLine()]
+  })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
@@ -55,6 +114,15 @@ export default function AssetForm({ asset, clients, projects, vendors, canDelete
     if (!form.client_id) return setError('Pilih klien.')
     if (!form.domain_name.trim()) return setError('Isi nama domain / nama layanan.')
     if (!form.expiry_date) return setError('Isi tanggal habis masa aktif.')
+    const items = lines
+      .map((l, i) => ({
+        // Baris pertama tanpa keterangan diberi nama layanannya.
+        description: l.description.trim() || (i === 0 ? `${assetTypeLabel(form.asset_type)} ${form.domain_name.trim()}` : ''),
+        cost_price: Number(l.cost_price) || 0,
+        sell_price: Number(l.sell_price) || 0,
+      }))
+      .filter((l, i) => i === 0 || l.description || l.cost_price || l.sell_price)
+    if (items.some((l) => !l.description)) return setError('Isi keterangan untuk setiap rincian perpanjangan.')
     setBusy(true)
     setError('')
     const payload = {
@@ -66,15 +134,20 @@ export default function AssetForm({ asset, clients, projects, vendors, canDelete
       website_url: form.website_url.trim() || null,
       registration_date: form.registration_date || null,
       cycle_months: Number(form.cycle_months),
-      cost_price: Number(form.cost_price) || 0,
-      sell_price: Number(form.sell_price) || 0,
+      cost_price: items.reduce((s, l) => s + l.cost_price, 0),
+      sell_price: items.reduce((s, l) => s + l.sell_price, 0),
       notes: form.notes.trim() || null,
     }
     const res = isNew
-      ? await supabase.from('acc_digital_assets').insert(payload)
+      ? await supabase.from('acc_digital_assets').insert(payload).select('id').single()
       : await supabase.from('acc_digital_assets').update(payload).eq('id', asset.id)
+    if (res.error) {
+      setBusy(false)
+      return setError(res.error.message)
+    }
+    const { error: itemsErr } = await supabase.rpc('asset_save_price_items', { p_asset_id: isNew ? res.data.id : asset.id, p_items: items })
     setBusy(false)
-    if (res.error) return setError(res.error.message)
+    if (itemsErr) return setError(`Aset tersimpan, tapi rincian perpanjangan gagal disimpan: ${itemsErr.message}`)
     onSaved(isNew ? 'Aset ditambahkan.' : 'Aset diperbarui.')
   }
 
@@ -164,12 +237,9 @@ export default function AssetForm({ asset, clients, projects, vendors, canDelete
           <Field label="Tanggal Habis Masa Aktif">
             <input type="date" className="input-field" value={form.expiry_date || ''} onChange={(e) => set({ expiry_date: e.target.value })} />
           </Field>
-          <Field label="Harga Modal per Siklus" hint="Yang Anda bayar ke vendor.">
-            <input type="number" min="0" className="input-field" value={form.cost_price} onChange={(e) => set({ cost_price: e.target.value })} />
-          </Field>
-          <Field label="Harga Jual per Siklus" hint="Yang ditagihkan ke klien saat perpanjangan.">
-            <input type="number" min="0" className="input-field" value={form.sell_price} onChange={(e) => set({ sell_price: e.target.value })} />
-          </Field>
+          <div className="sm:col-span-2">
+            <PriceItemsEditor lines={lines} onChange={setLines} cycleMonths={form.cycle_months} />
+          </div>
           {(form.asset_type === 'domain' || form.asset_type === 'server') && (
             <Field label="URL Website (opsional)" hint="Untuk pemantauan website online/down." className="sm:col-span-2">
               <input className="input-field" value={form.website_url || ''} onChange={(e) => set({ website_url: e.target.value })} placeholder="https://" />

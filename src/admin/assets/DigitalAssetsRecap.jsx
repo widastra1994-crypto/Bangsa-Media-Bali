@@ -13,7 +13,8 @@ import { ASSET_TYPES, STATUS_LABEL, assetTypeLabel, cycleLabel, daysUntil, forma
 
 const ASSET_SELECT =
   '*, acc_clients(id, company_name, pic_name, email, phone_primary), acc_projects(website_name), vendor:acc_vendors!acc_digital_assets_vendor_id_fkey(vendor_name), ' +
-  'acc_asset_renewals(id, invoice_id, status, period_start, period_end, sell_price, cost_price, paid_at, ' +
+  'acc_asset_price_items(description, cost_price, sell_price, sort), ' +
+  'acc_asset_renewals(id, invoice_id, status, period_start, period_end, sell_price, cost_price, paid_at, lines, ' +
   'acc_invoices(id, invoice_number, status, total_amount, paid_amount, pph23_amount, due_date, public_token))'
 
 const TABS = [
@@ -292,7 +293,14 @@ export default function DigitalAssetsRecap() {
                         </p>
                       </td>
                       <td className="px-3 py-3 text-right text-slate-400">{idr(a.cost_price)}</td>
-                      <td className="px-3 py-3 text-right font-semibold text-white">{idr(renewalPrice(a))}</td>
+                      <td className="px-3 py-3 text-right font-semibold text-white">
+                        {idr(renewalPrice(a))}
+                        {a.acc_asset_price_items?.length > 1 && (
+                          <span className="block text-[11px] font-normal text-slate-500" title={a.acc_asset_price_items.map((l) => l.description).join(', ')}>
+                            {a.acc_asset_price_items.length} rincian
+                          </span>
+                        )}
+                      </td>
                       <td className="px-3 py-3">
                         {inv ? (
                           <div className="space-y-1.5">

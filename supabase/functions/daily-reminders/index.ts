@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     const { data: settings } = await supabase.from('acc_reminder_settings').select('site_url').eq('id', 1).maybeSingle()
     const siteUrl = (settings?.site_url || 'https://bangsamediabali.com').replace(/\/$/, '')
     const typeLabel = (t: string) =>
-      ({ domain: 'Domain', server: 'Hosting/Server', ssl: 'SSL', email: 'Email Bisnis' } as Record<string, string>)[t] || 'Layanan'
+      ({ domain: 'Domain', server: 'Hosting/Server', ssl: 'SSL', email: 'Email Bisnis', subscription: 'Langganan/Lisensi' } as Record<string, string>)[t] || 'Layanan'
 
     // A1. H-60: estimasi biaya perpanjangan.
     const { data: assets } = await supabase
@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     // A2. Invoice perpanjangan: kirim saat terbit, lalu H-14, H-7, H-1, hari H, dan H+7.
     const { data: renewalInvoices } = await supabase
       .from('acc_invoices')
-      .select('*, acc_clients(company_name, email), acc_asset_renewals(sell_price, period_start, period_end, status, acc_digital_assets(asset_type, domain_name))')
+      .select('*, acc_clients(company_name, email), acc_asset_renewals(sell_price, period_start, period_end, status, lines, acc_digital_assets(asset_type, domain_name))')
       .in('invoice_type', ['domain_renewal', 'server_renewal'])
       .in('status', ['sent', 'partial', 'overdue'])
 
@@ -124,13 +124,27 @@ Deno.serve(async (req) => {
       if (!isFirst && (!stage || sent.has(stage))) continue
 
       const link = `${siteUrl}/invoice/${inv.public_token}`
+      type RenewalRow = {
+        sell_price: number
+        period_start: string
+        period_end: string
+        lines?: { description: string; sell_price: number }[]
+        acc_digital_assets: { asset_type: string; domain_name: string }
+      }
+      // Setiap baris rincian perpanjangan tampil sendiri; perpanjangan lama tanpa rincian = satu baris.
       const rows = items
+        .flatMap((r: RenewalRow) =>
+          (r.lines?.length
+            ? r.lines.map((l) => ({ label: l.description, amount: Number(l.sell_price) }))
+            : [{ label: `${typeLabel(r.acc_digital_assets?.asset_type)} ${r.acc_digital_assets?.domain_name || ''}`, amount: Number(r.sell_price) }]
+          ).map((l) => ({ ...l, period: `${r.period_start} s/d ${r.period_end}` })),
+        )
         .map(
-          (r: { sell_price: number; period_start: string; period_end: string; acc_digital_assets: { asset_type: string; domain_name: string } }) => `
+          (l: { label: string; amount: number; period: string }) => `
             <tr>
-              <td style="padding:8px 0;border-bottom:1px solid #eee;">${typeLabel(r.acc_digital_assets?.asset_type)} ${r.acc_digital_assets?.domain_name || ''}<br/>
-                <span style="font-size:12px;color:#64748b;">Periode ${r.period_start} s/d ${r.period_end}</span></td>
-              <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;">${idr(r.sell_price)}</td>
+              <td style="padding:8px 0;border-bottom:1px solid #eee;">${l.label}<br/>
+                <span style="font-size:12px;color:#64748b;">Periode ${l.period}</span></td>
+              <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;">${idr(l.amount)}</td>
             </tr>`,
         )
         .join('')

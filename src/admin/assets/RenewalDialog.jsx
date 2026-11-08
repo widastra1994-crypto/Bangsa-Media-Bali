@@ -60,6 +60,20 @@ export default function RenewalDialog({ assets, onClose, onDone }) {
                     <p className="text-[11px] text-slate-500">
                       Habis {formatDate(a.expiry_date)} · diperpanjang {cycleLabel(a.cycle_months).toLowerCase()}
                     </p>
+                    {a.acc_asset_price_items?.length > 1 && (
+                      <ul className="mt-1 text-[11px] text-slate-400">
+                        {[...a.acc_asset_price_items]
+                          .sort((x, y) => x.sort - y.sort)
+                          .map((l, i) => (
+                            <li key={i}>
+                              • {l.description} {idr(l.sell_price)}
+                            </li>
+                          ))}
+                      </ul>
+                    )}
+                    {Number(amounts[a.id]) !== renewalPrice(a) && (
+                      <p className="mt-1 text-[11px] text-amber-400">Nominal diubah: rincian digabung jadi satu baris di invoice.</p>
+                    )}
                   </div>
                   <input
                     type="number"
