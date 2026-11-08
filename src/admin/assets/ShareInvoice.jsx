@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { sendFinanceEmail } from '../../lib/financeEmail'
 import { invoiceOutstanding } from '../../lib/invoiceUtils'
 import { useContent } from '../../context/ContentContext'
-import { buildShareText, fetchRenewalItems, getReminderSettings, logShare, publicInvoiceUrl, waPhone } from './assetUtils'
+import { buildShareText, fetchInvoiceItems, getReminderSettings, logShare, publicInvoiceUrl, waPhone } from './assetUtils'
 
 const currentUserId = async () => (await supabase.auth.getSession()).data?.session?.user?.id
 
@@ -19,7 +19,7 @@ export default function ShareInvoice({ invoice, client, compact = false, onShare
   const [notice, setNotice] = useState('')
 
   const prepare = async () => {
-    const [settings, items] = await Promise.all([getReminderSettings(), fetchRenewalItems(invoice.id)])
+    const [settings, items] = await Promise.all([getReminderSettings(), fetchInvoiceItems(invoice.id)])
     const link = publicInvoiceUrl(settings.site_url, invoice.public_token)
     return { settings, items, link }
   }
@@ -64,7 +64,7 @@ export default function ShareInvoice({ invoice, client, compact = false, onShare
         docNumber: invoice.invoice_number,
         amount: invoiceOutstanding(invoice),
         dueDate: invoice.due_date,
-        items: items.length ? items.map((it) => ({ label: `${it.label} (${it.note})`, amount: it.amount })) : undefined,
+        items: items.length ? items.map((it) => ({ label: it.note ? `${it.label} (${it.note})` : it.label, amount: it.amount })) : undefined,
         link,
       })
       if (!res.ok) throw new Error(res.error || 'periksa konfigurasi email')

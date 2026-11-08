@@ -5,7 +5,7 @@ import { useContent } from '../context/ContentContext'
 import MascotIcon from '../components/MascotIcon'
 import SignaturePad from '../components/SignaturePad'
 import ProjectProgress from '../components/ProjectProgress'
-import { invoiceOutstanding } from '../lib/invoiceUtils'
+import { INVOICE_ITEMS_SELECT, invoiceLineItems, invoiceOutstanding } from '../lib/invoiceUtils'
 
 // Lazy-load jsPDF (lumayan besar) hanya saat tombol unduh benar-benar diklik,
 // supaya pengunjung website biasa (yang tidak pernah buka /portal) tidak ikut
@@ -171,7 +171,7 @@ function Dashboard({ session }) {
       setClient(clientRow)
       const [proj, inv] = await Promise.all([
         supabase.from('acc_projects').select('*').eq('client_id', clientRow.id).order('created_at', { ascending: false }),
-        supabase.from('acc_invoices').select('*, acc_payments(*)').eq('client_id', clientRow.id).order('created_at', { ascending: false }),
+        supabase.from('acc_invoices').select('*, acc_payments(*), ' + INVOICE_ITEMS_SELECT).eq('client_id', clientRow.id).order('created_at', { ascending: false }),
       ])
       setProjects(proj.data || [])
       setInvoices(inv.data || [])
@@ -319,7 +319,7 @@ function Dashboard({ session }) {
             </div>
             <button
               type="button"
-              onClick={() => downloadInvoicePdf(inv, client, brand)}
+              onClick={() => downloadInvoicePdf({ ...inv, items: invoiceLineItems(inv) }, client, brand)}
               className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-cyan-royal hover:text-ebtblue"
             >
               <Download size={13} /> Unduh PDF Invoice

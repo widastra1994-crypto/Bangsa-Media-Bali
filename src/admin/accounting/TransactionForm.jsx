@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { sendFinanceEmail } from '../../lib/financeEmail'
 import { useSupabaseTable } from './useSupabaseTable'
 import { logAudit } from './auditLog'
+import { ExtraChargeRows, emptyExtra, extrasError, extrasTotal, filledExtras } from './ExtraCharges'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -47,6 +48,7 @@ const emptyForm = {
   costBankAccountId: '',
   staff: { developer_id: '', designer_id: '', sales_id: '' },
   commission: { developer_id: '', designer_id: '', sales_id: '' },
+  extras: [emptyExtra()],
   depositAmount: '',
   depositMethod: 'bank_transfer',
   depositBankAccountId: '',
@@ -72,8 +74,11 @@ export default function TransactionForm() {
   const activeStaff = staff.rows.filter((s) => s.is_active !== false)
 
   const totalBeban = (Number(form.domainCost) || 0) + (Number(form.serverCost) || 0) + (Number(form.otherCost) || 0)
-  const margin = (Number(form.dealPrice) || 0) - totalBeban
-  const sisaPiutang = (Number(form.dealPrice) || 0) - (Number(form.depositAmount) || 0)
+  const extraTotal = extrasTotal(form.extras)
+  const invoiceTotal = (Number(form.dealPrice) || 0) + extraTotal
+  const extraError = extrasError(form.extras)
+  const margin = invoiceTotal - totalBeban
+  const sisaPiutang = invoiceTotal - (Number(form.depositAmount) || 0)
   const overBudget = Number(form.budgetLimit) > 0 && totalBeban > Number(form.budgetLimit)
 
   const totalCommission = useMemo(
@@ -94,6 +99,7 @@ export default function TransactionForm() {
     form.serviceCategoryId &&
     Number(form.dealPrice) > 0 &&
     (!overBudget || form.budgetOverrideAck) &&
+    !extraError &&
     !submitting
 
   const resetForm = () => setForm(emptyForm)
@@ -190,25 +196,46 @@ export default function TransactionForm() {
         if (expErr) throw new Error(expErr.message)
       }
 
-      // 5. Invoice
+      // 5. Invoice: harga proyek + pembayaran tambahan (bila ada) dalam satu
+      // invoice, dengan rincian per baris.
       const dealPrice = Number(form.dealPrice) || 0
       const deposit = Number(form.depositAmount) || 0
-      const { data: invoiceRows, error: invoiceErr } = await supabase
-        .from('acc_invoices')
-        .insert({
-          project_id: project.id,
-          client_id: clientId,
-          invoice_type: deposit >= dealPrice ? 'project_settlement' : 'project_deposit',
-          subtotal: dealPrice,
-          tax_type: 'none',
-          tax_amount: 0,
-          total_amount: dealPrice,
-          due_date: form.projectDate,
-          status: 'sent',
+      const extras = filledExtras(form.extras)
+      const invoiceAmount = dealPrice + extras.reduce((sum, x) => sum + x.amount, 0)
+      const invoiceType = deposit >= invoiceAmount ? 'project_settlement' : 'project_deposit'
+      const categoryName = categories.rows.find((c) => c.id === form.serviceCategoryId)?.name || 'Proyek'
+      const projectLabel = [categoryName, form.websiteName].filter(Boolean).join(' - ')
+      let invoice
+      if (extras.length > 0) {
+        const { data: invoiceId, error: invoiceErr } = await supabase.rpc('invoice_create_with_items', {
+          p_client_id: clientId,
+          p_project_id: project.id,
+          p_invoice_type: invoiceType,
+          p_due: form.projectDate,
+          p_items: [{ description: projectLabel, amount: dealPrice, kind: 'project' }, ...extras.map((x) => ({ ...x, kind: 'extra' }))],
         })
-        .select()
-      if (invoiceErr) throw new Error(invoiceErr.message)
-      const invoice = invoiceRows[0]
+        if (invoiceErr) throw new Error(invoiceErr.message)
+        const { data: invRow, error: invReadErr } = await supabase.from('acc_invoices').select('*').eq('id', invoiceId).single()
+        if (invReadErr) throw new Error(invReadErr.message)
+        invoice = invRow
+      } else {
+        const { data: invoiceRows, error: invoiceErr } = await supabase
+          .from('acc_invoices')
+          .insert({
+            project_id: project.id,
+            client_id: clientId,
+            invoice_type: invoiceType,
+            subtotal: dealPrice,
+            tax_type: 'none',
+            tax_amount: 0,
+            total_amount: dealPrice,
+            due_date: form.projectDate,
+            status: 'sent',
+          })
+          .select()
+        if (invoiceErr) throw new Error(invoiceErr.message)
+        invoice = invoiceRows[0]
+      }
 
       // 6. Deposit / pembayaran awal (memicu trigger update status invoice & komisi)
       if (deposit > 0) {
@@ -245,9 +272,9 @@ export default function TransactionForm() {
           to: clientRecord.email,
           clientName: clientRecord.company_name,
           docNumber: invoice.invoice_number,
-          amount: dealPrice,
+          amount: invoiceAmount,
           dueDate: form.projectDate,
-          items: [{ label: form.websiteName || 'Proyek', amount: dealPrice }],
+          items: [{ label: projectLabel, amount: dealPrice }, ...extras.map((x) => ({ label: x.description, amount: x.amount }))],
         })
         emailInfo = invoiceRes.ok ? 'Email invoice terkirim. ' : `Email invoice belum terkirim (${invoiceRes.error || 'lihat konfigurasi Resend'}). `
 
@@ -264,7 +291,7 @@ export default function TransactionForm() {
       }
 
       logAudit('create', 'acc_projects', project.id, {
-        newValues: { client: clientRecord.company_name, website: form.websiteName, deal_price: dealPrice, invoice_number: invoice.invoice_number, deposit },
+        newValues: { client: clientRecord.company_name, website: form.websiteName, deal_price: dealPrice, extras, invoice_number: invoice.invoice_number, deposit },
       })
 
       setResult({ invoiceNumber: invoice.invoice_number, emailInfo })
@@ -460,9 +487,24 @@ export default function TransactionForm() {
         </div>
       </div>
 
+      {/* PEMBAYARAN TAMBAHAN */}
+      <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+        <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gold-soft">5. Pembayaran Tambahan (opsional)</h3>
+        <p className="mb-3 text-xs text-slate-400">
+          Tagihan di luar harga proyek, misalnya iklan, foto produk, atau fitur tambahan. Keterangannya bebas dan tampil sebagai baris tersendiri di invoice klien.
+        </p>
+        <ExtraChargeRows rows={form.extras} onChange={(extras) => set({ extras })} />
+        {extraError && <p className="mt-2 text-xs text-amber-300">{extraError}</p>}
+        {extraTotal > 0 && (
+          <p className="mt-2 text-xs text-slate-300">
+            Total invoice: {idr(Number(form.dealPrice) || 0)} (proyek) + {idr(extraTotal)} (tambahan) = <b className="text-white">{idr(invoiceTotal)}</b>
+          </p>
+        )}
+      </div>
+
       {/* DEPOSIT */}
       <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gold-soft">5. Deposit / Pembayaran Awal (opsional)</h3>
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gold-soft">6. Deposit / Pembayaran Awal (opsional)</h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <label className="label-field">Nominal Deposit (Rp)</label>

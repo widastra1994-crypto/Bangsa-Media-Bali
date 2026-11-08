@@ -116,6 +116,7 @@ export async function generateInvoicePdf(invoice, client, brand) {
     domain_renewal: 'Perpanjangan Domain',
     server_renewal: 'Perpanjangan Server/Hosting',
     recurring_retainer: 'Layanan Bulanan (Retainer)',
+    additional: 'Tagihan Tambahan',
   }
   // invoice.items (opsional): rincian per layanan, mis. perpanjangan domain & server.
   const rows = invoice.items?.length ? invoice.items : [{ label: invoiceTypeLabel[invoice.invoice_type] || 'Layanan', amount: invoice.subtotal }]

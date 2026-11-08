@@ -5,9 +5,8 @@ import { sendFinanceEmail } from '../../lib/financeEmail'
 import { useSupabaseTable } from './useSupabaseTable'
 import { logAudit } from './auditLog'
 import { useContent } from '../../context/ContentContext'
-import { invoiceOutstanding } from '../../lib/invoiceUtils'
+import { INVOICE_ITEMS_SELECT, invoiceLineItems, invoiceOutstanding } from '../../lib/invoiceUtils'
 import ShareInvoice from '../assets/ShareInvoice'
-import { assetTypeLabel, formatDate } from '../assets/assetUtils'
 
 // Lazy-load jsPDF (lumayan besar) hanya saat tombol unduh benar-benar diklik,
 // supaya tidak ikut membebani bundle awal admin panel.
@@ -99,15 +98,6 @@ function PaymentForm({ invoice, bankAccounts, onDone }) {
   )
 }
 
-const renewalItems = (inv) =>
-  (inv.acc_asset_renewals || [])
-    .filter((r) => r.status !== 'cancelled')
-    .map((r) => ({
-      label: `Perpanjangan ${assetTypeLabel(r.acc_digital_assets?.asset_type)} ${r.acc_digital_assets?.domain_name || ''}`.trim(),
-      note: `Periode ${formatDate(r.period_start)} - ${formatDate(r.period_end)}`,
-      amount: Number(r.sell_price),
-    }))
-
 const SHARE_LABEL = { whatsapp: 'WhatsApp', email: 'Email', link: 'Link', auto_email: 'Email otomatis' }
 
 export default function InvoicesList() {
@@ -128,7 +118,7 @@ export default function InvoicesList() {
     setLoading(true)
     supabase
       .from('acc_invoices')
-      .select('*, acc_clients(company_name, email, pic_name, address, phone_primary), acc_projects(website_name), acc_invoice_reminder_log(stage), acc_payments(*), acc_invoice_shares(channel, created_at), acc_asset_renewals(sell_price, period_start, period_end, status, acc_digital_assets(asset_type, domain_name))')
+      .select('*, acc_clients(company_name, email, pic_name, address, phone_primary), acc_projects(website_name), acc_invoice_reminder_log(stage), acc_payments(*), acc_invoice_shares(channel, created_at), acc_asset_renewals(sell_price, period_start, period_end, status, acc_digital_assets(asset_type, domain_name)), ' + INVOICE_ITEMS_SELECT)
       .order('created_at', { ascending: false })
       .then(({ data, error: err }) => {
         if (err) setError(err.message)
@@ -166,6 +156,7 @@ export default function InvoicesList() {
         {!loading && rows.length === 0 && <p className="text-sm text-slate-500">Belum ada invoice.</p>}
         {rows.map((inv) => {
           const outstanding = invoiceOutstanding(inv)
+          const lineItems = invoiceLineItems(inv)
           return (
             <div key={inv.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -199,6 +190,20 @@ export default function InvoicesList() {
                 </div>
               </div>
 
+              {lineItems.length > 0 && (
+                <div className="mt-3 rounded-xl border border-white/10 px-3 py-2 text-[11px] text-slate-400">
+                  {lineItems.map((it, i) => (
+                    <p key={i} className="flex justify-between gap-3 py-0.5">
+                      <span>
+                        {it.label}
+                        {it.note && <span className="text-slate-500"> · {it.note}</span>}
+                      </span>
+                      <span className="shrink-0 text-slate-300">{idr(it.amount)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+
               <div className="mt-3 flex flex-wrap gap-2">
                 {outstanding > 0 && inv.status !== 'cancelled' && (
                   <button
@@ -210,7 +215,7 @@ export default function InvoicesList() {
                   </button>
                 )}
                 <ShareInvoice invoice={inv} client={inv.acc_clients} onShared={load} />
-                <button type="button" onClick={() => downloadInvoicePdf({ ...inv, items: renewalItems(inv) }, inv.acc_clients, brand)} className="btn-secondary !px-3 !py-1.5 text-xs">
+                <button type="button" onClick={() => downloadInvoicePdf({ ...inv, items: invoiceLineItems(inv) }, inv.acc_clients, brand)} className="btn-secondary !px-3 !py-1.5 text-xs">
                   <Download size={13} /> Unduh PDF Invoice
                 </button>
               </div>

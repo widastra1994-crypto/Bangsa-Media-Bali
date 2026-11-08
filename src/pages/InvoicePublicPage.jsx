@@ -24,6 +24,7 @@ const TYPE_LABEL = {
   domain_renewal: 'Perpanjangan Layanan',
   server_renewal: 'Perpanjangan Layanan',
   recurring_retainer: 'Layanan Bulanan',
+  additional: 'Tagihan Tambahan',
 }
 
 // Halaman invoice untuk klien, dibuka dari link WhatsApp/email tanpa login.

@@ -11,6 +11,7 @@ export default function ProfitabilityReport() {
   const [expenses, setExpenses] = useState([])
   const [commissions, setCommissions] = useState([])
   const [timeLogs, setTimeLogs] = useState([])
+  const [extras, setExtras] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -20,12 +21,14 @@ export default function ProfitabilityReport() {
       supabase.from('acc_expenses').select('project_id, amount').not('project_id', 'is', null),
       supabase.from('acc_commissions').select('project_id, commission_amount'),
       supabase.from('acc_time_logs').select('project_id, hours'),
-    ]).then(([proj, asset, exp, comm, tl]) => {
+      supabase.from('acc_invoice_items').select('amount, acc_invoices!inner(project_id, status)').eq('kind', 'extra').neq('acc_invoices.status', 'cancelled'),
+    ]).then(([proj, asset, exp, comm, tl, ext]) => {
       setProjects(proj.data || [])
       setAssets(asset.data || [])
       setExpenses(exp.data || [])
       setCommissions(comm.data || [])
       setTimeLogs(tl.data || [])
+      setExtras(ext.data || [])
       setLoading(false)
     })
   }, [])
@@ -37,13 +40,14 @@ export default function ProfitabilityReport() {
       const commissionCost = commissions.filter((c) => c.project_id === p.id).reduce((s, c) => s + Number(c.commission_amount || 0), 0)
       const hours = timeLogs.filter((t) => t.project_id === p.id).reduce((s, t) => s + Number(t.hours || 0), 0)
       const totalCost = assetCost + expenseCost + commissionCost
-      const revenue = Number(p.deal_price || 0)
+      const extraRevenue = extras.filter((x) => x.acc_invoices?.project_id === p.id).reduce((s, x) => s + Number(x.amount || 0), 0)
+      const revenue = Number(p.deal_price || 0) + extraRevenue
       const margin = revenue - totalCost
       const marginPct = revenue > 0 ? (margin / revenue) * 100 : 0
       const perHour = hours > 0 ? margin / hours : null
       return { ...p, assetCost, expenseCost, commissionCost, totalCost, revenue, margin, marginPct, hours, perHour }
     })
-  }, [projects, assets, expenses, commissions, timeLogs])
+  }, [projects, assets, expenses, commissions, timeLogs, extras])
 
   const totals = rows.reduce(
     (acc, r) => ({ revenue: acc.revenue + r.revenue, cost: acc.cost + r.totalCost, margin: acc.margin + r.margin }),

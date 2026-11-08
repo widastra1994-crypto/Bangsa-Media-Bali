@@ -1,9 +1,10 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
-import { ChevronDown, ChevronUp, Download, Trash2, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Download, FilePlus2, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { exportToCsv } from './csvExport'
 import { useUserRole } from '../useUserRole'
 import ProjectTasksPanel from './ProjectTasksPanel'
+import { AdditionalChargeDialog } from './ExtraCharges'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -121,12 +122,13 @@ export default function ProjectsList() {
   const [error, setError] = useState('')
   const [expandedId, setExpandedId] = useState(null)
   const [deleting, setDeleting] = useState(null)
+  const [charging, setCharging] = useState(null)
   const [notice, setNotice] = useState('')
 
   const load = useCallback(() => {
     setLoading(true)
     Promise.all([
-      supabase.from('acc_projects').select('*, acc_clients(company_name, email), acc_service_categories(name)').order('created_at', { ascending: false }),
+      supabase.from('acc_projects').select('*, acc_clients(company_name, email, pic_name, phone_primary), acc_service_categories(name)').order('created_at', { ascending: false }),
       supabase.from('acc_project_tasks').select('project_id, status'),
     ]).then(([proj, tasks]) => {
       if (proj.error) setError(proj.error.message)
@@ -260,6 +262,16 @@ export default function ProjectsList() {
                         >
                           {expanded ? 'Tutup' : 'Kelola'} {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                         </button>
+                        {canAddTasks && row.status !== 'cancelled' && (
+                          <button
+                            type="button"
+                            onClick={() => setCharging(row)}
+                            className="flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-emerald-600 hover:text-emerald-500"
+                            title="Tagihan tambahan, mis. iklan atau revisi"
+                          >
+                            <FilePlus2 size={13} /> Tagihan
+                          </button>
+                        )}
                         {isOwnerOrAdmin && (
                           <button
                             type="button"
@@ -291,6 +303,14 @@ export default function ProjectsList() {
           </tbody>
         </table>
       </div>
+
+      {charging && (
+        <AdditionalChargeDialog
+          project={charging}
+          onClose={() => setCharging(null)}
+          onCreated={(inv) => setNotice(`Invoice tambahan ${inv?.invoice_number || ''} untuk ${charging.website_name || 'proyek'} diterbitkan.`)}
+        />
+      )}
 
       {deleting && (
         <DeleteProjectDialog

@@ -89,18 +89,24 @@ export function fillTemplate(template, values) {
   return String(template || '').replace(/\{(\w+)\}/g, (m, key) => (values[key] !== undefined ? values[key] : m))
 }
 
-export async function fetchRenewalItems(invoiceId) {
-  const { data } = await supabase
-    .from('acc_asset_renewals')
-    .select('sell_price, period_start, period_end, status, acc_digital_assets(asset_type, domain_name)')
-    .eq('invoice_id', invoiceId)
-    .neq('status', 'cancelled')
-    .order('created_at')
-  return (data || []).map((r) => ({
-    label: `${assetTypeLabel(r.acc_digital_assets?.asset_type)} ${r.acc_digital_assets?.domain_name || ''}`.trim(),
-    note: `Periode ${formatDate(r.period_start)} - ${formatDate(r.period_end)}`,
-    amount: Number(r.sell_price),
-  }))
+export async function fetchInvoiceItems(invoiceId) {
+  const [extra, renewals] = await Promise.all([
+    supabase.from('acc_invoice_items').select('description, amount, sort').eq('invoice_id', invoiceId).order('sort'),
+    supabase
+      .from('acc_asset_renewals')
+      .select('sell_price, period_start, period_end, status, acc_digital_assets(asset_type, domain_name)')
+      .eq('invoice_id', invoiceId)
+      .neq('status', 'cancelled')
+      .order('created_at'),
+  ])
+  return [
+    ...(extra.data || []).map((it) => ({ label: it.description, amount: Number(it.amount) })),
+    ...(renewals.data || []).map((r) => ({
+      label: `${assetTypeLabel(r.acc_digital_assets?.asset_type)} ${r.acc_digital_assets?.domain_name || ''}`.trim(),
+      note: `Periode ${formatDate(r.period_start)} - ${formatDate(r.period_end)}`,
+      amount: Number(r.sell_price),
+    })),
+  ]
 }
 
 export function buildShareText({ template, brand, invoice, client, items, link }) {
