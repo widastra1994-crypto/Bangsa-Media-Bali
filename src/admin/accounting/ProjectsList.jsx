@@ -1,10 +1,11 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
-import { ChevronDown, ChevronUp, Download, FilePlus2, Trash2, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Download, FilePlus2, Pencil, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { exportToCsv } from './csvExport'
 import { useUserRole } from '../useUserRole'
 import ProjectTasksPanel from './ProjectTasksPanel'
 import { AdditionalChargeDialog } from './ExtraCharges'
+import ProjectEditDialog from './ProjectEditDialog'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -123,6 +124,7 @@ export default function ProjectsList() {
   const [expandedId, setExpandedId] = useState(null)
   const [deleting, setDeleting] = useState(null)
   const [charging, setCharging] = useState(null)
+  const [editing, setEditing] = useState(null)
   const [notice, setNotice] = useState('')
 
   const load = useCallback(() => {
@@ -262,6 +264,16 @@ export default function ProjectsList() {
                         >
                           {expanded ? 'Tutup' : 'Kelola'} {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                         </button>
+                        {canAddTasks && (
+                          <button
+                            type="button"
+                            onClick={() => setEditing(row)}
+                            className="flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-slate-600 hover:text-slate-800"
+                            title="Edit proyek"
+                          >
+                            <Pencil size={13} /> Edit
+                          </button>
+                        )}
                         {canAddTasks && row.status !== 'cancelled' && (
                           <button
                             type="button"
@@ -303,6 +315,18 @@ export default function ProjectsList() {
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <ProjectEditDialog
+          project={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(notes) => {
+            setEditing(null)
+            setNotice(`Proyek diperbarui.${notes.length ? ` Ikut berubah: ${notes.join('; ')}.` : ''}`)
+            load()
+          }}
+        />
+      )}
 
       {charging && (
         <AdditionalChargeDialog
