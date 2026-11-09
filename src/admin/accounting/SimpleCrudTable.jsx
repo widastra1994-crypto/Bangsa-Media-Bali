@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
 
 function FieldInput({ field, value, onChange }) {
+  if (field.type === 'custom') return field.render({ value, onChange })
   if (field.type === 'select') {
     return (
       <select className="input-field" value={value ?? ''} onChange={(e) => onChange(e.target.value)}>
