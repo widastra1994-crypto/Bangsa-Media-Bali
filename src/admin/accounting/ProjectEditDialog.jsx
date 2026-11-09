@@ -42,7 +42,7 @@ export default function ProjectEditDialog({ project, onClose, onSaved }) {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('acc_clients').select('id, company_name').order('company_name'),
+      supabase.from('acc_clients').select('id, company_name, pic_name, email, phone_primary').order('company_name'),
       supabase.from('acc_service_categories').select('id, name').order('name'),
       supabase.from('acc_staff_members').select('id, name, role_type, is_active').order('name'),
     ]).then(([c, k, s]) => setLists({ clients: c.data || [], categories: k.data || [], staff: s.data || [] }))

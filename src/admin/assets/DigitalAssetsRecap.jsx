@@ -50,7 +50,7 @@ export default function DigitalAssetsRecap() {
     setLoading(true)
     const [a, c, p, v] = await Promise.all([
       supabase.from('acc_digital_assets').select(ASSET_SELECT).order('expiry_date', { ascending: true, nullsFirst: false }),
-      supabase.from('acc_clients').select('id, company_name').order('company_name'),
+      supabase.from('acc_clients').select('id, company_name, pic_name, email, phone_primary').order('company_name'),
       supabase.from('acc_projects').select('id, website_name, client_id').order('created_at', { ascending: false }),
       supabase.from('acc_vendors').select('id, vendor_name, vendor_type').order('vendor_name'),
     ])
