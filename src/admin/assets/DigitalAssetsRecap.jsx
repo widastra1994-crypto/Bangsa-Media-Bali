@@ -163,7 +163,9 @@ export default function DigitalAssetsRecap() {
         />
         <StatCard label="Tagihan perpanjangan / tahun" value={idr(stats.revenue)} tone="good" />
         <StatCard label="Modal ke vendor / tahun" value={idr(stats.cost)} />
-        <StatCard label="Margin / tahun" value={idr(stats.revenue - stats.cost)} tone={stats.revenue - stats.cost >= 0 ? 'good' : 'bad'} />
+        <div className="col-span-2 lg:col-span-1">
+          <StatCard label="Margin / tahun" value={idr(stats.revenue - stats.cost)} tone={stats.revenue - stats.cost >= 0 ? 'good' : 'bad'} />
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-1 border-b border-white/10">
@@ -246,17 +248,16 @@ export default function DigitalAssetsRecap() {
           )}
 
           <div className="mt-3 overflow-x-auto rounded-2xl border border-white/10">
-            <table className="w-full min-w-[980px] text-left text-xs">
+            <table className="w-full min-w-[860px] text-left text-xs">
               <thead className="bg-white/5 text-[11px] uppercase tracking-wide text-slate-500">
                 <tr>
                   {canEdit && <th className="w-8 px-3 py-2.5" />}
                   <th className="px-3 py-2.5">Layanan</th>
                   <th className="px-3 py-2.5">Vendor</th>
                   <th className="px-3 py-2.5">Masa Aktif</th>
-                  <th className="px-3 py-2.5 text-right">Modal</th>
-                  <th className="px-3 py-2.5 text-right">Jual</th>
+                  <th className="px-3 py-2.5 text-right">Harga Perpanjangan</th>
                   <th className="px-3 py-2.5">Invoice Perpanjangan</th>
-                  <th className="px-3 py-2.5 text-right">Aksi</th>
+                  <th className="w-28 px-3 py-2.5 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -284,7 +285,7 @@ export default function DigitalAssetsRecap() {
                         )}
                       </td>
                       <td className="px-3 py-3">{a.vendor?.vendor_name || '-'}</td>
-                      <td className="px-3 py-3">
+                      <td className="whitespace-nowrap px-3 py-3">
                         <p className="text-white">{formatDate(a.expiry_date)}</p>
                         <span className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold ${u.badge}`}>{u.text}</span>
                         <p className="mt-1 text-[11px] text-slate-500">
@@ -292,13 +293,16 @@ export default function DigitalAssetsRecap() {
                           {!a.auto_invoice && ' · invoice manual'}
                         </p>
                       </td>
-                      <td className="px-3 py-3 text-right text-slate-400">{idr(a.cost_price)}</td>
-                      <td className="px-3 py-3 text-right font-semibold text-white">
-                        {idr(renewalPrice(a))}
+                      <td className="whitespace-nowrap px-3 py-3 text-right">
+                        <p className="text-sm font-semibold text-white">{idr(renewalPrice(a))}</p>
+                        <p className="text-[11px] text-slate-500">modal {idr(a.cost_price)}</p>
+                        <p className={`text-[11px] ${renewalPrice(a) - Number(a.cost_price) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          margin {idr(renewalPrice(a) - Number(a.cost_price))}
+                        </p>
                         {a.acc_asset_price_items?.length > 1 && (
-                          <span className="block text-[11px] font-normal text-slate-500" title={a.acc_asset_price_items.map((l) => l.description).join(', ')}>
+                          <p className="text-[11px] text-cyan-royal" title={a.acc_asset_price_items.map((l) => l.description).join(', ')}>
                             {a.acc_asset_price_items.length} rincian
-                          </span>
+                          </p>
                         )}
                       </td>
                       <td className="px-3 py-3">
@@ -316,19 +320,37 @@ export default function DigitalAssetsRecap() {
                       </td>
                       <td className="px-3 py-3">
                         {canEdit && (
-                          <div className="flex flex-col items-end gap-1.5">
+                          <div className="flex items-center justify-end gap-1">
                             {!inv && isLive(a) && (
-                              <button type="button" onClick={() => setRenewing([a])} className="btn-secondary !px-2 !py-1 text-[11px]">
-                                <FilePlus2 size={12} /> Buat Invoice
+                              <button
+                                type="button"
+                                onClick={() => setRenewing([a])}
+                                className="btn-secondary !h-8 !w-8 !p-0"
+                                title="Buat invoice perpanjangan"
+                                aria-label={`Buat invoice perpanjangan ${a.domain_name}`}
+                              >
+                                <FilePlus2 size={14} />
                               </button>
                             )}
                             {!inv && isLive(a) && (
-                              <button type="button" onClick={() => markRenewed(a)} className="btn-secondary !px-2 !py-1 text-[11px]" title="Sudah dibayar di luar invoice">
-                                <CalendarCheck size={12} /> Tandai Diperpanjang
+                              <button
+                                type="button"
+                                onClick={() => markRenewed(a)}
+                                className="btn-secondary !h-8 !w-8 !p-0"
+                                title="Tandai sudah diperpanjang (dibayar di luar invoice)"
+                                aria-label={`Tandai ${a.domain_name} sudah diperpanjang`}
+                              >
+                                <CalendarCheck size={14} />
                               </button>
                             )}
-                            <button type="button" onClick={() => setEditing(a)} className="btn-secondary !px-2 !py-1 text-[11px]">
-                              <Pencil size={12} /> Edit
+                            <button
+                              type="button"
+                              onClick={() => setEditing(a)}
+                              className="btn-secondary !h-8 !w-8 !p-0"
+                              title="Edit aset"
+                              aria-label={`Edit ${a.domain_name}`}
+                            >
+                              <Pencil size={14} />
                             </button>
                           </div>
                         )}
@@ -338,7 +360,7 @@ export default function DigitalAssetsRecap() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
                       {assets.length ? 'Tidak ada aset yang cocok dengan filter.' : 'Belum ada aset digital. Klik "Tambah Aset".'}
                     </td>
                   </tr>
