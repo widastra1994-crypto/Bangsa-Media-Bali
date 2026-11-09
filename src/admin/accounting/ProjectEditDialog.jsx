@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
+import ClientPicker from './ClientPicker'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
@@ -75,15 +76,13 @@ export default function ProjectEditDialog({ project, onClose, onSaved }) {
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Klien">
-            <select className="input-field" value={form.client_id} onChange={(e) => set({ client_id: e.target.value })}>
-              <option value="">Pilih klien</option>
-              {lists.clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.company_name}
-                </option>
-              ))}
-            </select>
+          <Field label="Klien" className="sm:col-span-2">
+            <ClientPicker
+              clients={lists.clients}
+              value={form.client_id}
+              onChange={(id) => set({ client_id: id })}
+              onCreated={(c) => setLists((l) => ({ ...l, clients: [...l.clients, c].sort((a, b) => a.company_name.localeCompare(b.company_name)) }))}
+            />
           </Field>
           <Field label="Nama Website / Proyek">
             <input className="input-field" value={form.website_name} onChange={(e) => set({ website_name: e.target.value })} />

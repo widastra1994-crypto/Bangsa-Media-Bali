@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { sendFinanceEmail } from '../../lib/financeEmail'
 import { useSupabaseTable } from './useSupabaseTable'
 import { logAudit } from './auditLog'
+import ClientPicker from './ClientPicker'
 import { ExtraChargeRows, emptyExtra, extrasError, extrasTotal, filledExtras } from './ExtraCharges'
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
@@ -326,45 +327,13 @@ export default function TransactionForm() {
       {/* KLIEN */}
       <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gold-soft">1. Klien</h3>
-        <div className="mb-3 flex gap-2">
-          <button
-            type="button"
-            onClick={() => set({ clientMode: 'existing' })}
-            className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${form.clientMode === 'existing' ? 'border-gold bg-gold/15 text-gold-soft' : 'border-white/15 text-slate-400'}`}
-          >
-            Pilih Klien Ada
-          </button>
-          <button
-            type="button"
-            onClick={() => set({ clientMode: 'new' })}
-            className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${form.clientMode === 'new' ? 'border-gold bg-gold/15 text-gold-soft' : 'border-white/15 text-slate-400'}`}
-          >
-            Klien Baru
-          </button>
-        </div>
-
-        {form.clientMode === 'existing' ? (
-          <select className="input-field" value={form.clientId} onChange={(e) => set({ clientId: e.target.value })}>
-            <option value="">Pilih klien...</option>
-            {clients.rows.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.company_name} ({c.email})
-              </option>
-            ))}
-          </select>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input className="input-field" placeholder="Nama Klien/Bisnis" value={form.newClient.company_name} onChange={(e) => set({ newClient: { ...form.newClient, company_name: e.target.value } })} />
-            <input className="input-field" placeholder="Nama PIC" value={form.newClient.pic_name} onChange={(e) => set({ newClient: { ...form.newClient, pic_name: e.target.value } })} />
-            <input className="input-field" type="email" placeholder="Email Aktif" value={form.newClient.email} onChange={(e) => set({ newClient: { ...form.newClient, email: e.target.value } })} />
-            <input className="input-field" placeholder="Telepon" value={form.newClient.phone_primary} onChange={(e) => set({ newClient: { ...form.newClient, phone_primary: e.target.value } })} />
-            <input className="input-field" placeholder="Tipe Usaha" value={form.newClient.business_type} onChange={(e) => set({ newClient: { ...form.newClient, business_type: e.target.value } })} />
-            <select className="input-field" value={form.newClient.client_type} onChange={(e) => set({ newClient: { ...form.newClient, client_type: e.target.value } })}>
-              <option value="perorangan">Perorangan</option>
-              <option value="badan_usaha">Badan Usaha</option>
-            </select>
-          </div>
-        )}
+        <ClientPicker
+          clients={clients.rows}
+          value={form.clientId}
+          onChange={(id) => set({ clientMode: 'existing', clientId: id })}
+          onCreated={() => clients.refresh()}
+          showEmail
+        />
       </div>
 
       {/* PROYEK */}

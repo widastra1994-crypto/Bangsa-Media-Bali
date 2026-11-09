@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, RefreshCw, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
+import ClientPicker from '../accounting/ClientPicker'
 import { ASSET_TYPES, CYCLES, STATUS_LABEL, assetTypeLabel, cycleLabel, idr } from './assetUtils'
 
 const EMPTY = {
@@ -108,6 +109,7 @@ export default function AssetForm({ asset, clients, projects, vendors, canDelete
   const [error, setError] = useState('')
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
 
+  const [clientList, setClientList] = useState(clients)
   const clientProjects = projects.filter((p) => p.client_id === form.client_id)
 
   const save = async () => {
@@ -183,15 +185,13 @@ export default function AssetForm({ asset, clients, projects, vendors, canDelete
           <Field label={form.asset_type === 'domain' ? 'Nama Domain' : 'Nama Layanan'} hint={form.asset_type === 'domain' ? 'Contoh: namaklien.com' : 'Contoh: Hosting 2GB namaklien.com'}>
             <input className="input-field" value={form.domain_name} onChange={(e) => set({ domain_name: e.target.value })} />
           </Field>
-          <Field label="Klien">
-            <select className="input-field" value={form.client_id} onChange={(e) => set({ client_id: e.target.value, project_id: '' })}>
-              <option value="">Pilih klien</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.company_name}
-                </option>
-              ))}
-            </select>
+          <Field label="Klien" className="sm:col-span-2">
+            <ClientPicker
+              clients={clientList}
+              value={form.client_id}
+              onChange={(id) => set({ client_id: id, project_id: '' })}
+              onCreated={(c) => setClientList((list) => [...list, c].sort((a, b) => a.company_name.localeCompare(b.company_name)))}
+            />
           </Field>
           <Field label="Proyek (opsional)" hint="Kosongkan bila klien hanya membeli domain/server.">
             <select className="input-field" value={form.project_id || ''} onChange={(e) => set({ project_id: e.target.value })} disabled={!form.client_id}>
