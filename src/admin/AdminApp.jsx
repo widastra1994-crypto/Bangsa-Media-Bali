@@ -179,6 +179,13 @@ function CenteredScreen({ children }) {
   return <div className="admin-theme flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">{children}</div>
 }
 
+// Hanya terima id menu biasa (huruf, angka, tanda hubung); hash lain mis. token
+// login Supabase "#access_token=..." diabaikan.
+function readTabFromHash() {
+  const id = decodeURIComponent(window.location.hash.replace(/^#/, ''))
+  return /^[a-z0-9-]+$/i.test(id) ? id : null
+}
+
 export default function AdminApp() {
   const { authed: sessionAuthed, loading } = useAdminSession()
   const { role, menuAccess, account, error: roleError, loading: roleLoading } = useUserRole()
@@ -186,12 +193,20 @@ export default function AdminApp() {
   // reaktif sendiri terhadap login/logout, jadi status efektifnya dipandu dari sini
   // sampai sessionAuthed dari hook menyusul (selalu terjadi pada mode Supabase).
   const [localOverride, setLocalOverride] = useState(null)
-  const [activeTab, setActiveTab] = useState(null)
+  // Menu aktif disimpan di hash URL (/admin#acc-assets) supaya refresh tetap di
+  // halaman yang sama dan tombol Back browser kembali ke menu sebelumnya.
+  const [activeTab, setActiveTab] = useState(readTabFromHash)
   const [collapsedGroups, setCollapsedGroups] = useState({})
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     document.title = 'Admin CMS — Bangsa Media Bali'
+  }, [])
+
+  useEffect(() => {
+    const onHashChange = () => setActiveTab(readTabFromHash())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
 
   useEffect(() => {
@@ -216,6 +231,7 @@ export default function AdminApp() {
     adminSignOut()
     setLocalOverride(false)
     setActiveTab(null)
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
   }
 
   if (isSupabaseConfigured && roleError) {
@@ -275,6 +291,7 @@ export default function AdminApp() {
   const selectTab = (id) => {
     setActiveTab(id)
     setMobileMenuOpen(false)
+    if (readTabFromHash() !== id) window.location.hash = id
   }
 
   const currentGroup = visibleGroups.find((g) => g.tabs.some((t) => t.id === currentTabId))
