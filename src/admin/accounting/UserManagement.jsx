@@ -36,7 +36,7 @@ const canDeleteUser = (callerRole, myId, p) =>
 
 function DeleteUserDialog({ profile, deleting, onCancel, onConfirm }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-5 sm:items-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={deleting ? undefined : onCancel} />
       <div className="glass-panel relative w-full max-w-md rounded-2xl p-6 shadow-2xl">
         <p className="flex items-center gap-2 text-base font-semibold text-white">

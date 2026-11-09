@@ -167,8 +167,8 @@ function PayDialog({ run, total, onClose, onDone }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="glass-panel w-full max-w-md rounded-2xl p-6">
+    <div className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-black/60 px-3 py-6 sm:p-6">
+      <div className="glass-panel mx-auto my-4 w-full max-w-md rounded-2xl p-4 sm:my-10 sm:p-6">
         <h3 className="text-base font-semibold text-white">Bayar Gaji {monthLabel(run.period.slice(0, 7))}</h3>
         <p className="mt-1 text-xs text-slate-400">Total {idr(total)}. Lakukan transfer ke setiap staf di bank Anda (lihat "Daftar Transfer"), lalu catat di sini.</p>
         <div className="mt-4 space-y-3">

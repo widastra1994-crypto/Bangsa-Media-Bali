@@ -119,8 +119,8 @@ function ProfileForm({ staff, profile, onClose, onSaved }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
-      <div className="glass-panel w-full max-w-2xl rounded-2xl p-6">
+    <div className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-black/60 px-3 py-6 sm:p-6">
+      <div className="glass-panel mx-auto my-4 w-full max-w-2xl rounded-2xl p-4 sm:my-10 sm:p-6">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold text-white">Gaji {staff.name}</h3>
           <button type="button" onClick={onClose} className="text-slate-500 hover:text-white" aria-label="Tutup">

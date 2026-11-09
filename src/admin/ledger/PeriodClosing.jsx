@@ -47,8 +47,8 @@ function CloseDialog({ month, onClose, onDone }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="glass-panel w-full max-w-lg rounded-2xl p-6">
+    <div className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-black/60 px-3 py-6 sm:p-6">
+      <div className="glass-panel mx-auto my-4 w-full max-w-lg rounded-2xl p-4 sm:my-10 sm:p-6">
         <h3 className="text-base font-semibold text-white">Tutup Buku {monthLabel(month)}</h3>
         <p className="mt-1 text-xs text-slate-400">Setelah ditutup, semua transaksi di bulan ini terkunci: invoice, pembayaran, pengeluaran, vendor, dan jurnal tidak bisa diubah atau dihapus. Kesalahan dikoreksi di bulan berjalan.</p>
 
