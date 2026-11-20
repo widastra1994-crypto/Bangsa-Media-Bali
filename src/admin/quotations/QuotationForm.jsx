@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowDown, ArrowUp, Plus, Receipt, Star, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CheckCircle2, Circle, Plus, Receipt, Star, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import ClientPicker from '../accounting/ClientPicker'
 import { SERVICE_TYPES, addDays, idr, templateFor, todayLocal } from './quoteTemplates'
@@ -94,7 +94,8 @@ export default function QuotationForm({ quote, clients, onClose, onSaved }) {
       title: base.title || '',
       needs: base.needs || '',
       solution: base.solution || '',
-      packages: (base.packages || []).map((p) => ({ ...p, featuresText: (p.features || []).join('\n') })),
+      packages: (base.packages || []).map((p, i, arr) => ({ ...p, recommended: arr.length === 1 ? true : !!p.recommended, featuresText: (p.features || []).join('\n') })),
+      single_package: isNew || (base.packages || []).length <= 1,
       timelineText: (base.timeline || []).join('\n'),
       payment_terms: base.payment_terms || [],
       valid_until: quote?.valid_until || addDays(todayLocal(), 14),
@@ -142,10 +143,12 @@ export default function QuotationForm({ quote, clients, onClose, onSaved }) {
   const save = async () => {
     if (!form.client_id) return setError('Pilih klien.')
     if (!form.title.trim()) return setError('Isi judul penawaran.')
+    if (form.single_package && !form.packages.some((p) => p.recommended)) return setError('Pilih satu paket yang ditawarkan ke klien.')
     const packages = form.packages
-      .map((p) => ({ name: p.name.trim(), price: Number(p.price) || 0, recommended: !!p.recommended, features: lines(p.featuresText) }))
+      .filter((p) => !form.single_package || p.recommended)
+      .map((p) => ({ name: p.name.trim(), price: Number(p.price) || 0, recommended: form.single_package ? false : !!p.recommended, features: lines(p.featuresText) }))
       .filter((p) => p.name)
-    if (!packages.length) return setError('Isi minimal satu paket.')
+    if (!packages.length) return setError(form.single_package ? 'Paket yang dipilih belum diberi nama.' : 'Isi minimal satu paket.')
     if (packages.some((p) => p.price <= 0)) return setError('Isi harga setiap paket.')
     if (form.payment_terms.length && termTotal !== 100) return setError(`Total persen termin harus 100% (sekarang ${termTotal}%).`)
     setBusy(true)
@@ -239,21 +242,57 @@ export default function QuotationForm({ quote, clients, onClose, onSaved }) {
             <SectionsEditor sections={form.sections} onChange={(sections) => set({ sections })} />
           </Section>
 
-          <Section title="Pilihan Paket" hint="1-3 paket. Tandai satu sebagai rekomendasi (bintang). Fitur: satu baris satu fitur.">
+          <Section
+            title="Paket & Harga"
+            hint={
+              form.single_package
+                ? 'Klik "Pilih paket ini" pada paket yang ditawarkan. Hanya paket terpilih yang tampil ke klien. Fitur: satu baris satu fitur.'
+                : '1-3 paket, klien memilih sendiri. Tandai satu sebagai rekomendasi (bintang). Fitur: satu baris satu fitur.'
+            }
+          >
+            <div className="mb-3 inline-flex rounded-xl border border-white/10 p-1 text-xs font-semibold">
+              {[
+                [true, 'Satu paket (dipilih admin)'],
+                [false, 'Beberapa pilihan untuk klien'],
+              ].map(([v, label]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => set({ single_package: v })}
+                  className={`rounded-lg px-3 py-1.5 ${form.single_package === v ? 'bg-cyan-royal text-white' : 'text-slate-400 hover:text-white'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {form.packages.map((p, i) => (
-                <div key={i} className={`rounded-xl border p-3 ${p.recommended ? 'border-2 border-cyan-royal/60' : 'border-white/10'}`}>
-                  <div className="flex items-center gap-1.5">
-                    <input className="input-field !py-1.5 text-sm font-semibold" value={p.name} onChange={(e) => setPkg(i, { name: e.target.value })} placeholder="Nama paket" />
+                <div
+                  key={i}
+                  className={`rounded-xl border p-3 transition ${p.recommended ? 'border-2 border-cyan-royal/60' : 'border-white/10'} ${form.single_package && !p.recommended ? 'opacity-60 hover:opacity-100' : ''}`}
+                >
+                  {form.single_package && (
                     <button
                       type="button"
                       onClick={() => setRecommended(i)}
-                      className={p.recommended ? 'text-amber-400' : 'text-slate-400 hover:text-amber-400'}
-                      title="Jadikan paket rekomendasi"
-                      aria-label="Jadikan paket rekomendasi"
+                      className={`mb-2 flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold ${p.recommended ? 'bg-cyan-royal text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
                     >
-                      <Star size={16} fill={p.recommended ? 'currentColor' : 'none'} />
+                      {p.recommended ? <CheckCircle2 size={14} /> : <Circle size={14} />} {p.recommended ? 'Paket dipilih' : 'Pilih paket ini'}
                     </button>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <input className="input-field !py-1.5 text-sm font-semibold" value={p.name} onChange={(e) => setPkg(i, { name: e.target.value })} placeholder="Nama paket" />
+                    {!form.single_package && (
+                      <button
+                        type="button"
+                        onClick={() => setRecommended(i)}
+                        className={p.recommended ? 'text-amber-400' : 'text-slate-400 hover:text-amber-400'}
+                        title="Jadikan paket rekomendasi"
+                        aria-label="Jadikan paket rekomendasi"
+                      >
+                        <Star size={16} fill={p.recommended ? 'currentColor' : 'none'} />
+                      </button>
+                    )}
                     {form.packages.length > 1 && (
                       <button type="button" onClick={() => set({ packages: form.packages.filter((_, idx) => idx !== i) })} className="text-slate-400 hover:text-red-400" aria-label="Hapus paket">
                         <Trash2 size={15} />
