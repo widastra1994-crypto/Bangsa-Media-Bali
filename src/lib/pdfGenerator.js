@@ -383,3 +383,178 @@ export function generatePayslipPdf(slip, brand) {
   drawFooter(doc, 'Slip gaji ini dibuat otomatis oleh sistem dan sah tanpa tanda tangan basah. Simpan sebagai dokumen pribadi.')
   doc.save(`${slip.slip_no || 'slip-gaji'}.pdf`)
 }
+
+// ---------- Proposal penawaran (format dokumen seperti proposal resmi) ----------
+// quote: data penawaran (sections, packages, payment_terms, timeline, dll).
+// brand: { name, subBrand, phone, email, website, logoUrl }.
+export async function generateProposalPdf(quote, client, brand) {
+  const { parseBlocks, stripBold, fillClient, isPricing } = await import('./proposalFormat')
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const L = 20
+  const W = 170
+  const BOTTOM = 277
+  let y = 18
+  const clientName = client?.company_name || ''
+  const fill = (t) => fillClient(t, clientName)
+
+  const ensure = (h) => {
+    if (y + h > BOTTOM) {
+      doc.addPage()
+      y = 22
+    }
+  }
+  const text = (str, { size = 10.5, bold = false, color = DARK, x = L, width = W, gap = 5.6, justify = false } = {}) => {
+    doc.setFont('helvetica', bold ? 'bold' : 'normal')
+    doc.setFontSize(size)
+    doc.setTextColor(...color)
+    const lines = doc.splitTextToSize(String(str), width)
+    lines.forEach((line, i) => {
+      ensure(gap)
+      const last = i === lines.length - 1
+      doc.text(line, x, y, justify && !last ? { align: 'justify', maxWidth: width } : undefined)
+      y += gap
+    })
+  }
+  const rule = () => {
+    ensure(10)
+    y += 3
+    doc.setDrawColor(190, 190, 190)
+    doc.setLineWidth(0.3)
+    doc.line(L, y, L + W, y)
+    y += 9
+  }
+  const sectionTitle = (n, title) => {
+    ensure(20)
+    text(`${n}. ${String(title).toUpperCase()}`, { size: 15, bold: true, gap: 8 })
+    y += 2
+  }
+  const blocks = (content) => {
+    parseBlocks(fill(content)).forEach((b) => {
+      if (b.type === 'h') {
+        y += 1.5
+        text(stripBold(b.text), { size: 11.5, bold: true, gap: 6.5 })
+        y += 0.5
+      } else if (b.type === 'ul') {
+        b.items.forEach((it) => {
+          ensure(6)
+          doc.setFillColor(...DARK)
+          doc.circle(L + 6, y - 1.3, 0.8, 'F')
+          text(stripBold(it), { x: L + 10, width: W - 10 })
+        })
+        y += 2
+      } else if (b.type === 'ol') {
+        b.items.forEach((it, j) => {
+          ensure(6)
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(10.5)
+          doc.setTextColor(...DARK)
+          doc.text(`${(b.start || 1) + j}.`, L + 4, y)
+          text(stripBold(it.title), { x: L + 10, width: W - 10, bold: !!it.desc })
+          if (it.desc) text(stripBold(it.desc), { x: L + 10, width: W - 10 })
+        })
+        y += 2
+      } else {
+        text(stripBold(b.text), { justify: true })
+        y += 2.5
+      }
+    })
+  }
+
+  // Sampul
+  const logo = brand?.logoUrl ? await tryLoadImageAsDataUrl(brand.logoUrl) : null
+  if (logo) {
+    const props = doc.getImageProperties(logo)
+    const h = 14
+    doc.addImage(logo, 'PNG', L, y, (props.width / props.height) * h, h)
+    y += h + 12
+  } else {
+    text(brand?.name || 'Bangsa Media Bali', { size: 16, bold: true })
+    y += 6
+  }
+  text(String(quote.doc_title || quote.title).toUpperCase(), { size: 20, bold: true, gap: 10 })
+  y += 6
+  text('Disusun oleh:', { size: 10, bold: true })
+  text(String(brand?.name || 'Bangsa Media Bali').toUpperCase(), { size: 10, bold: true })
+  if (brand?.subBrand) text(brand.subBrand, { size: 10 })
+  y += 3
+  text('Ditujukan kepada:', { size: 10, bold: true })
+  text([quote.addressed_to, clientName].filter(Boolean).join(' – '), { size: 10 })
+  y += 3
+  text(`Tanggal: ${formatDate(quote.created_at || new Date())}`, { size: 10 })
+  text(`No. Penawaran: ${quote.quote_number || '-'}${quote.valid_until ? `  ·  Berlaku sampai ${formatDate(quote.valid_until)}` : ''}`, { size: 10, color: SLATE })
+  rule()
+
+  let n = 0
+  const sections = quote.sections?.length ? quote.sections : [{ type: 'pricing' }]
+  sections.forEach((s) => {
+    if (isPricing(s)) {
+      if (quote.estimated_duration || quote.timeline?.length) {
+        sectionTitle(++n, 'Estimasi Waktu Pengerjaan')
+        if (quote.estimated_duration) text(`Estimasi pengerjaan: ${quote.estimated_duration}`, { bold: true })
+        ;(quote.timeline || []).forEach((t) => {
+          ensure(6)
+          doc.setFillColor(...DARK)
+          doc.circle(L + 6, y - 1.3, 0.8, 'F')
+          text(t, { x: L + 10, width: W - 10 })
+        })
+        rule()
+      }
+      sectionTitle(++n, 'Investasi Proyek')
+      ;(quote.packages || []).forEach((p) => {
+        text(`${p.name}: ${idr(p.price)}${p.recommended && quote.packages.length > 1 ? '  (rekomendasi)' : ''}`, { bold: true, size: 11.5, gap: 6.5 })
+        ;(p.features || []).forEach((f) => {
+          ensure(6)
+          doc.setFillColor(...DARK)
+          doc.circle(L + 6, y - 1.3, 0.8, 'F')
+          text(f, { x: L + 10, width: W - 10 })
+        })
+        y += 3
+      })
+      if (quote.payment_terms?.length) {
+        text('Termin pembayaran:', { bold: true })
+        quote.payment_terms.forEach((t) => {
+          const pk = quote.packages?.[quote.accepted_package ?? -1] || (quote.packages?.length === 1 ? quote.packages[0] : null)
+          const base = Number(pk?.price) || null
+          text(`- ${t.label} ${t.percent}%${base ? `: ${idr((base * t.percent) / 100)}` : ''}`, { x: L + 4, width: W - 4 })
+        })
+      }
+      if (quote.guarantee || quote.revisions !== null) {
+        y += 2
+        text([quote.revisions !== null && quote.revisions !== undefined ? `Revisi: ${quote.revisions}x` : null, quote.guarantee ? `Garansi: ${quote.guarantee}` : null].filter(Boolean).join('  ·  '), { color: SLATE })
+      }
+      rule()
+      if (Number(quote.maintenance_fee) > 0) {
+        sectionTitle(++n, 'Maintenance & System Management')
+        text(`Biaya Layanan: ${idr(quote.maintenance_fee)} / ${quote.maintenance_period === 'bulan' ? 'Bulan' : 'Tahun'}`, { bold: true, size: 11.5, gap: 6.5 })
+        y += 1
+        if (quote.maintenance_note) blocks(quote.maintenance_note)
+        rule()
+      }
+      return
+    }
+    sectionTitle(++n, s.title || 'Bagian')
+    blocks(s.content)
+    if (/penutup/i.test(s.title || '')) {
+      y += 4
+      text('Hormat kami,')
+      y += 14
+      text(String(brand?.name || 'Bangsa Media Bali').toUpperCase(), { bold: true })
+      if (brand?.subBrand) text(brand.subBrand)
+      y += 6
+      ;[brand?.phone, brand?.website, brand?.email].filter(Boolean).forEach((c) => text(c, { size: 10 }))
+    } else {
+      rule()
+    }
+  })
+
+  const pages = doc.getNumberOfPages()
+  for (let i = 1; i <= pages; i += 1) {
+    doc.setPage(i)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(...SLATE)
+    doc.text(`${brand?.name || 'Bangsa Media Bali'} · ${quote.quote_number || ''}`, L, 290)
+    doc.text(`Halaman ${i} dari ${pages}`, L + W, 290, { align: 'right' })
+  }
+  doc.save(`${quote.quote_number || 'Penawaran'} - ${clientName || 'Proposal'}.pdf`.replace(/[\/:*?"<>|]/g, '-'))
+}

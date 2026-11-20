@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Ban, Check, ExternalLink, Link2, Mail, MessageCircle, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Ban, Check, ExternalLink, FileDown, Link2, Mail, MessageCircle, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { sendFinanceEmail } from '../../lib/financeEmail'
 import { useContent } from '../../context/ContentContext'
@@ -7,6 +7,7 @@ import { ErrorNote, PageHeader, StatCard } from '../ledger/LedgerUI'
 import { useUserRole } from '../useUserRole'
 import { getReminderSettings, waPhone } from '../assets/assetUtils'
 import QuotationForm from './QuotationForm'
+import logoFull from '../../assets/logo-full.png'
 import { STATUS, idr, quoteUrl, serviceLabel, todayLocal } from './quoteTemplates'
 
 const formatDate = (d) => (d ? new Date(d.length === 10 ? `${d}T00:00:00` : d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-')
@@ -104,6 +105,20 @@ export default function QuotationsList() {
   const [editing, setEditing] = useState(null)
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
+  const { content } = useContent()
+  const downloadPdf = async (r) => {
+    const { generateProposalPdf } = await import('../../lib/pdfGenerator')
+    const brand = {
+      name: content.brand?.name || 'Bangsa Media Bali',
+      subBrand: content.brand?.subBrand,
+      address: content.contact?.address,
+      phone: content.contact?.phone,
+      email: content.contact?.email,
+      website: window.location.host,
+      logoUrl: logoFull,
+    }
+    await generateProposalPdf(r, r.acc_clients || {}, brand)
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -264,6 +279,9 @@ export default function QuotationsList() {
                             <ExternalLink size={14} />
                           </button>
                         )}
+                        <button type="button" onClick={() => downloadPdf(r)} className="btn-secondary !h-8 !w-8 !p-0" title="Unduh PDF proposal" aria-label="Unduh PDF proposal">
+                          <FileDown size={14} />
+                        </button>
                         {canEdit && EDITABLE.includes(r.status) && (
                           <button type="button" onClick={() => setEditing(r)} className="btn-secondary !h-8 !w-8 !p-0" title="Edit penawaran" aria-label="Edit penawaran">
                             <Pencil size={14} />

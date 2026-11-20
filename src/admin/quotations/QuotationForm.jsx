@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Plus, Star, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Plus, Receipt, Star, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import ClientPicker from '../accounting/ClientPicker'
 import { SERVICE_TYPES, addDays, idr, templateFor, todayLocal } from './quoteTemplates'
+import { isPricing } from '../../lib/proposalFormat'
 
 function Section({ title, hint, children }) {
   return (
@@ -10,6 +11,66 @@ function Section({ title, hint, children }) {
       <p className="text-sm font-semibold text-white">{title}</p>
       {hint && <p className="mt-0.5 text-[11px] text-slate-500">{hint}</p>}
       <div className="mt-3">{children}</div>
+    </div>
+  )
+}
+
+// Daftar bagian proposal (Pendahuluan, Tujuan, Ruang Lingkup, ...). Blok
+// Investasi (estimasi waktu, paket, termin, maintenance) bisa dipindah posisinya.
+function SectionsEditor({ sections, onChange }) {
+  const move = (i, d) => {
+    const j = i + d
+    if (j < 0 || j >= sections.length) return
+    const next = [...sections]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    onChange(next)
+  }
+  const update = (i, patch) => onChange(sections.map((x, idx) => (idx === i ? { ...x, ...patch } : x)))
+  const iconBtn = 'flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-white/10 hover:text-white disabled:opacity-30'
+  return (
+    <div className="space-y-3">
+      {sections.map((sec, i) => (
+        <div key={i} className={`rounded-xl border p-3 ${isPricing(sec) ? 'border-dashed border-cyan-royal/50 bg-cyan-500/5' : 'border-white/10'}`}>
+          <div className="flex items-center gap-2">
+            <span className="w-6 shrink-0 text-center text-xs font-bold text-slate-500">{i + 1}</span>
+            {isPricing(sec) ? (
+              <p className="flex flex-1 items-center gap-1.5 text-xs font-semibold text-cyan-royal">
+                <Receipt size={14} /> Blok Investasi: estimasi waktu, paket & harga, termin, maintenance
+              </p>
+            ) : (
+              <input className="input-field flex-1 !py-1.5 text-sm font-semibold" value={sec.title} onChange={(e) => update(i, { title: e.target.value })} placeholder="Judul bagian, mis. Pendahuluan" />
+            )}
+            <button type="button" className={iconBtn} onClick={() => move(i, -1)} disabled={i === 0} aria-label="Naikkan">
+              <ArrowUp size={14} />
+            </button>
+            <button type="button" className={iconBtn} onClick={() => move(i, 1)} disabled={i === sections.length - 1} aria-label="Turunkan">
+              <ArrowDown size={14} />
+            </button>
+            {!isPricing(sec) && (
+              <button type="button" className={`${iconBtn} hover:!text-red-400`} onClick={() => onChange(sections.filter((_, idx) => idx !== i))} aria-label="Hapus bagian">
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+          {!isPricing(sec) && (
+            <textarea rows={7} className="input-field mt-2 font-mono text-xs leading-relaxed" value={sec.content} onChange={(e) => update(i, { content: e.target.value })} />
+          )}
+        </div>
+      ))}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <button type="button" onClick={() => onChange([...sections, { title: '', content: '' }])} className="flex items-center gap-1 text-xs font-semibold text-cyan-royal hover:underline">
+          <Plus size={13} /> Tambah bagian
+        </button>
+        {!sections.some(isPricing) && (
+          <button type="button" onClick={() => onChange([...sections, { type: 'pricing' }])} className="text-xs font-semibold text-cyan-royal hover:underline">
+            + Tambahkan blok Investasi
+          </button>
+        )}
+      </div>
+      <p className="rounded-lg bg-white/5 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
+        Format isi: <code>## Sub judul</code> · <code>- poin</code> · <code>1. Judul poin</code> (baris di bawahnya jadi keterangan) · <code>**tebal**</code> · baris kosong =
+        paragraf baru · <code>{'{klien}'}</code> otomatis diganti nama klien.
+      </p>
     </div>
   )
 }
@@ -40,6 +101,13 @@ export default function QuotationForm({ quote, clients, onClose, onSaved }) {
       guarantee: base.guarantee || '',
       revisions: base.revisions ?? 2,
       terms: base.terms || '',
+      doc_title: base.doc_title || '',
+      addressed_to: base.addressed_to || 'Management Perusahaan',
+      sections: base.sections?.length ? base.sections : templateFor(base.service_type || 'other').sections,
+      estimated_duration: base.estimated_duration || '',
+      maintenance_fee: base.maintenance_fee ?? '',
+      maintenance_period: base.maintenance_period || 'tahun',
+      maintenance_note: base.maintenance_note || '',
     }
   })
   const [busy, setBusy] = useState(false)
@@ -47,7 +115,7 @@ export default function QuotationForm({ quote, clients, onClose, onSaved }) {
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
 
   const changeType = (type) => {
-    if (!isNew && !window.confirm('Ganti isi penawaran dengan template layanan ini? Isian paket, timeline, dan garansi akan diganti.')) return
+    if (!isNew && !window.confirm('Ganti isi penawaran dengan template layanan ini? Isi proposal, paket, timeline, dan maintenance akan diganti.')) return
     const t = templateFor(type)
     set({
       service_type: type,
@@ -57,6 +125,12 @@ export default function QuotationForm({ quote, clients, onClose, onSaved }) {
       timelineText: t.timeline.join('\n'),
       guarantee: t.guarantee,
       revisions: t.revisions,
+      doc_title: t.doc_title,
+      sections: t.sections,
+      estimated_duration: t.estimated_duration,
+      maintenance_fee: t.maintenance_fee,
+      maintenance_period: t.maintenance_period,
+      maintenance_note: t.maintenance_note,
     })
   }
 
@@ -91,6 +165,15 @@ export default function QuotationForm({ quote, clients, onClose, onSaved }) {
       guarantee: form.guarantee.trim() || null,
       revisions: form.revisions === '' ? null : Number(form.revisions),
       terms: form.terms.trim() || null,
+      doc_title: form.doc_title.trim() || null,
+      addressed_to: form.addressed_to.trim() || null,
+      sections: form.sections
+        .map((x) => (isPricing(x) ? { type: 'pricing' } : { title: (x.title || '').trim(), content: x.content || '' }))
+        .filter((x) => isPricing(x) || x.title || x.content.trim()),
+      estimated_duration: form.estimated_duration.trim() || null,
+      maintenance_fee: form.maintenance_fee === '' ? null : Number(form.maintenance_fee) || null,
+      maintenance_period: form.maintenance_period,
+      maintenance_note: form.maintenance_note.trim() || null,
     }
     // Revisi selesai dikerjakan: kembali menunggu keputusan klien.
     if (quote?.status === 'revision_requested') payload.status = 'sent'
@@ -138,17 +221,22 @@ export default function QuotationForm({ quote, clients, onClose, onSaved }) {
             </div>
           </div>
 
-          <Section title="Kebutuhan & Solusi" hint="Ditampilkan paling atas supaya klien merasa dipahami.">
+          <Section title="Kop Proposal">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className="label-field">Kebutuhan / masalah klien</label>
-                <textarea rows={3} className="input-field" value={form.needs} onChange={(e) => set({ needs: e.target.value })} placeholder="mis. Tamu masih booking lewat chat dan sering dobel jadwal." />
+              <div className="sm:col-span-2">
+                <label className="label-field">Judul dokumen</label>
+                <input className="input-field" value={form.doc_title} onChange={(e) => set({ doc_title: e.target.value })} placeholder="mis. Proposal Penawaran Operational & Business Management System" />
               </div>
               <div>
-                <label className="label-field">Solusi kami</label>
-                <textarea rows={3} className="input-field" value={form.solution} onChange={(e) => set({ solution: e.target.value })} />
+                <label className="label-field">Ditujukan kepada</label>
+                <input className="input-field" value={form.addressed_to} onChange={(e) => set({ addressed_to: e.target.value })} placeholder="mis. Management Perusahaan" />
               </div>
+              <p className="self-end text-[11px] text-slate-500">Nama klien, tanggal, dan nomor penawaran ditambahkan otomatis.</p>
             </div>
+          </Section>
+
+          <Section title="Isi Proposal" hint="Susunan bagian proposal seperti dokumen resmi. Urutan bisa diatur dengan panah.">
+            <SectionsEditor sections={form.sections} onChange={(sections) => set({ sections })} />
           </Section>
 
           <Section title="Pilihan Paket" hint="1-3 paket. Tandai satu sebagai rekomendasi (bintang). Fitur: satu baris satu fitur.">
@@ -226,6 +314,30 @@ export default function QuotationForm({ quote, clients, onClose, onSaved }) {
               <input className="input-field" value={form.guarantee} onChange={(e) => set({ guarantee: e.target.value })} placeholder="mis. perbaikan bug 3 bulan" />
             </div>
           </div>
+          <Section title="Estimasi Waktu & Maintenance" hint="Tampil di blok Investasi. Kosongkan biaya maintenance bila tidak ada.">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <label className="label-field">Estimasi pengerjaan</label>
+                <input className="input-field" value={form.estimated_duration} onChange={(e) => set({ estimated_duration: e.target.value })} placeholder="mis. 1 – 3 Minggu" />
+              </div>
+              <div>
+                <label className="label-field">Biaya maintenance</label>
+                <input type="number" min="0" className="input-field" value={form.maintenance_fee} onChange={(e) => set({ maintenance_fee: e.target.value })} placeholder="mis. 5000000" />
+              </div>
+              <div>
+                <label className="label-field">Per</label>
+                <select className="input-field" value={form.maintenance_period} onChange={(e) => set({ maintenance_period: e.target.value })}>
+                  <option value="tahun">Tahun</option>
+                  <option value="bulan">Bulan</option>
+                </select>
+              </div>
+              <div className="sm:col-span-3">
+                <label className="label-field">Layanan maintenance meliputi (format sama seperti isi proposal)</label>
+                <textarea rows={5} className="input-field font-mono text-xs" value={form.maintenance_note} onChange={(e) => set({ maintenance_note: e.target.value })} />
+              </div>
+            </div>
+          </Section>
+
           <div>
             <label className="label-field">Ketentuan tambahan (opsional, masuk ke kontrak)</label>
             <textarea rows={3} className="input-field text-xs" value={form.terms} onChange={(e) => set({ terms: e.target.value })} placeholder="mis. Materi foto & teks disediakan klien paling lambat minggu pertama." />

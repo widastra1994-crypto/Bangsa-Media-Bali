@@ -4,9 +4,12 @@ import { BadgeCheck, Briefcase, CalendarClock, CheckCircle2, Clock, Download, Fi
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { useContent } from '../context/ContentContext'
 import SignaturePad from '../components/SignaturePad'
+import ProposalBody from '../components/ProposalBody'
+import { fillClient, isPricing } from '../lib/proposalFormat'
 import logoFull from '../assets/logo-full.png'
 
 const downloadContractPdf = (...args) => import('../lib/pdfGenerator').then((m) => m.generateContractPdf(...args))
+const downloadProposalPdf = (...args) => import('../lib/pdfGenerator').then((m) => m.generateProposalPdf(...args))
 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 const formatDate = (d) => (d ? new Date(d.length === 10 ? `${d}T00:00:00` : d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-')
@@ -46,7 +49,15 @@ export default function QuotationPublicPage() {
     load()
   }, [load])
 
-  const brand = { name: content.brand?.name || 'Bangsa Media Bali', address: content.contact?.address, phone: content.contact?.phone, email: content.contact?.email }
+  const brand = {
+    name: content.brand?.name || 'Bangsa Media Bali',
+    subBrand: content.brand?.subBrand,
+    address: content.contact?.address,
+    phone: content.contact?.phone,
+    email: content.contact?.email,
+    website: typeof window !== 'undefined' ? window.location.host : '',
+    logoUrl: logoFull,
+  }
   const waNumber = String(content.contact?.whatsapp || content.contact?.phone || '').replace(/\D/g, '').replace(/^0/, '62')
 
   if (state.loading) return <div className="flex min-h-screen items-center justify-center bg-site-gradient text-sm text-slate-600">Memuat penawaran...</div>
@@ -69,6 +80,27 @@ export default function QuotationPublicPage() {
   const portfolio = (content.portfolio?.items || []).filter((p) => !PORTFOLIO_CATEGORY[q.service_type] || p.category === PORTFOLIO_CATEGORY[q.service_type]).slice(0, 3)
   const testimonials = (content.testimonials?.items || []).slice(0, 2)
   const waLink = (text) => `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`
+  const docSections = []
+  const rawSections = q.sections?.length
+    ? q.sections
+    : [
+        ...(q.needs ? [{ title: 'Kebutuhan', content: q.needs }] : []),
+        ...(q.solution ? [{ title: 'Solusi Kami', content: q.solution }] : []),
+        { type: 'pricing' },
+      ]
+  rawSections.forEach((sec) => {
+    if (isPricing(sec)) {
+      if (q.estimated_duration || q.timeline?.length) docSections.push({ kind: 'duration', title: 'Estimasi Waktu Pengerjaan' })
+      docSections.push({ kind: 'investment', title: 'Investasi Proyek' })
+      if (Number(q.maintenance_fee) > 0) docSections.push({ kind: 'maintenance', title: 'Maintenance & System Management' })
+    } else {
+      docSections.push({ kind: 'text', title: sec.title, content: sec.content, closing: /penutup/i.test(sec.title || '') })
+    }
+  })
+  docSections.forEach((sec, i) => {
+    sec.no = i + 1
+  })
+  const downloadPdf = () => downloadProposalPdf({ ...q, accepted_package: q.accepted_package ?? pkg }, client, brand)
 
   const accept = async () => {
     setBusy(true)
@@ -104,126 +136,168 @@ export default function QuotationPublicPage() {
   return (
     <div className="min-h-screen bg-site-gradient px-4 py-8 sm:py-10">
       <div className="mx-auto max-w-3xl space-y-4">
-        <img src={logoFull} alt={brand.name} className="mx-auto h-10 w-auto" />
-
-        <Card>
+        <Card className="!p-6 sm:!p-10">
           <div className="flex flex-wrap items-start justify-between gap-3">
+            <img src={logoFull} alt={brand.name} className="h-12 w-auto" />
+            <div className="flex flex-wrap items-center gap-2">
+              {open && left !== null && (
+                <span className="flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                  <Clock size={13} /> {left <= 0 ? 'Berlaku sampai hari ini' : `Berlaku ${left} hari lagi`}
+                </span>
+              )}
+              {q.expired && <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">Masa berlaku habis</span>}
+              <button type="button" onClick={downloadPdf} className="btn-secondary !py-1.5 text-xs">
+                <Download size={14} /> Unduh PDF
+              </button>
+            </div>
+          </div>
+
+          <h1 className="mt-8 text-2xl font-extrabold uppercase leading-tight text-ink sm:text-3xl">{q.doc_title || q.title}</h1>
+          <div className="mt-6 grid gap-4 text-sm sm:grid-cols-2">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Penawaran {q.quote_number}</p>
-              <h1 className="mt-1 text-2xl font-bold text-ink">{q.title}</h1>
-              <p className="mt-1 text-sm text-slate-500">
-                Untuk <b className="text-ink">{client.company_name}</b>
-                {client.pic_name ? ` · ${client.pic_name}` : ''} · {formatDate(q.created_at)}
-              </p>
+              <p className="font-bold text-ink">Disusun oleh:</p>
+              <p className="font-bold uppercase text-ink">{brand.name}</p>
+              {brand.subBrand && <p className="text-slate-600">{brand.subBrand}</p>}
             </div>
-            {open && left !== null && (
-              <span className="flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-                <Clock size={13} /> {left <= 0 ? 'Berlaku sampai hari ini' : `Berlaku ${left} hari lagi`}
-              </span>
-            )}
-            {q.expired && <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">Masa berlaku habis</span>}
-          </div>
-          {(q.needs || q.solution) && (
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {q.needs && (
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Kebutuhan Anda</p>
-                  <p className="mt-1 text-sm text-slate-700">{q.needs}</p>
-                </div>
-              )}
-              {q.solution && (
-                <div className="rounded-2xl bg-sky-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">Solusi kami</p>
-                  <p className="mt-1 text-sm text-slate-700">{q.solution}</p>
-                </div>
-              )}
+            <div>
+              <p className="font-bold text-ink">Ditujukan kepada:</p>
+              <p className="text-slate-700">{[q.addressed_to, client.company_name].filter(Boolean).join(' – ')}</p>
             </div>
-          )}
-        </Card>
-
-        <Card>
-          <p className="text-sm font-semibold text-ink">{q.packages.length > 1 ? 'Pilih paket' : 'Paket'}</p>
-          <div className={`mt-3 grid gap-3 ${q.packages.length > 1 ? 'sm:grid-cols-2 md:grid-cols-3' : ''}`}>
-            {q.packages.map((p, i) => {
-              const active = i === pkg
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  disabled={!open}
-                  onClick={() => setPkg(i)}
-                  className={`relative rounded-2xl border p-4 text-left transition ${active ? 'border-2 border-ebtblue bg-sky-50/60' : 'border-slate-200 hover:border-sky-300'}`}
-                >
-                  {p.recommended && (
-                    <span className="absolute -top-2.5 right-3 flex items-center gap-1 rounded-full bg-ebtblue px-2 py-0.5 text-[10px] font-bold text-white">
-                      <Star size={10} fill="currentColor" /> Paling dipilih
-                    </span>
-                  )}
-                  <p className="font-semibold text-ink">{p.name}</p>
-                  <p className="mt-1 text-xl font-bold text-ink">{idr(p.price)}</p>
-                  <ul className="mt-3 space-y-1.5 text-xs text-slate-600">
-                    {(p.features || []).map((f, j) => (
-                      <li key={j} className="flex gap-1.5">
-                        <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-emerald-500" /> {f}
-                      </li>
-                    ))}
-                  </ul>
-                </button>
-              )
-            })}
+            <p className="text-slate-700">
+              <b className="text-ink">Tanggal:</b> {formatDate(q.created_at)}
+            </p>
+            <p className="text-slate-500">
+              No. {q.quote_number}
+              {q.valid_until ? ` · berlaku sampai ${formatDate(q.valid_until)}` : ''}
+            </p>
           </div>
-        </Card>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {q.timeline?.length > 0 && (
-            <Card>
-              <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-                <CalendarClock size={16} className="text-ebtblue" /> Timeline pengerjaan
-              </p>
-              <ol className="mt-3 space-y-2">
-                {q.timeline.map((t, i) => (
-                  <li key={i} className="flex gap-2.5 text-sm text-slate-700">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-ebtblue">{i + 1}</span>
-                    {t}
-                  </li>
-                ))}
-              </ol>
-            </Card>
-          )}
-          {q.payment_terms?.length > 0 && (
-            <Card>
-              <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-                <Receipt size={16} className="text-ebtblue" /> Termin pembayaran
-              </p>
-              <div className="mt-3 space-y-2 text-sm">
-                {q.payment_terms.map((t, i) => (
-                  <p key={i} className="flex justify-between gap-3 text-slate-700">
-                    <span>
-                      {t.label} ({t.percent}%)
-                    </span>
-                    <b className="text-ink">{idr((price * Number(t.percent)) / 100)}</b>
-                  </p>
-                ))}
+          {docSections.map((s, idx) => (
+            <section key={idx} className="mt-8 border-t border-slate-200 pt-8">
+              <h2 className="text-xl font-extrabold uppercase text-ink">
+                {s.no}. {s.title}
+              </h2>
+              <div className="mt-4">
+                {s.kind === 'text' && <ProposalBody text={fillClient(s.content, client.company_name)} />}
+
+                {s.kind === 'duration' && (
+                  <div className="space-y-2 text-[15px] text-slate-700">
+                    {q.estimated_duration && (
+                      <p>
+                        Estimasi pengerjaan: <b className="text-ink">{q.estimated_duration}</b>
+                      </p>
+                    )}
+                    {q.timeline?.length > 0 && (
+                      <ol className="mt-2 space-y-2">
+                        {q.timeline.map((t, i) => (
+                          <li key={i} className="flex gap-2.5">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-ebtblue">{i + 1}</span>
+                            {t}
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                )}
+
+                {s.kind === 'investment' && (
+                  <div>
+                    {q.packages.length > 1 && open && <p className="mb-3 text-sm text-slate-500">Pilih paket yang sesuai, lalu setujui di bagian bawah.</p>}
+                    <div className={`grid gap-3 ${q.packages.length > 1 ? 'sm:grid-cols-2 md:grid-cols-3' : ''}`}>
+                      {q.packages.map((p, i) => {
+                        const active = i === pkg
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            disabled={!open || q.packages.length === 1}
+                            onClick={() => setPkg(i)}
+                            className={`relative rounded-2xl border p-4 text-left transition ${active && q.packages.length > 1 ? 'border-2 border-ebtblue bg-sky-50/60' : 'border-slate-200'} ${q.packages.length > 1 ? 'hover:border-sky-300' : ''}`}
+                          >
+                            {p.recommended && q.packages.length > 1 && (
+                              <span className="absolute -top-2.5 right-3 flex items-center gap-1 rounded-full bg-ebtblue px-2 py-0.5 text-[10px] font-bold text-white">
+                                <Star size={10} fill="currentColor" /> Paling dipilih
+                              </span>
+                            )}
+                            <p className="font-bold text-ink">
+                              {p.name}
+                              {q.packages.length === 1 ? ':' : ''} <span className="whitespace-nowrap">{q.packages.length === 1 ? idr(p.price) : ''}</span>
+                            </p>
+                            {q.packages.length > 1 && <p className="mt-1 text-xl font-bold text-ink">{idr(p.price)}</p>}
+                            <ul className="mt-3 space-y-1.5 text-sm text-slate-600">
+                              {(p.features || []).map((f, j) => (
+                                <li key={j} className="flex gap-1.5">
+                                  <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-500" /> {f}
+                                </li>
+                              ))}
+                            </ul>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {q.payment_terms?.length > 0 && (
+                      <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm">
+                        <p className="flex items-center gap-2 font-bold text-ink">
+                          <Receipt size={15} className="text-ebtblue" /> Termin pembayaran
+                        </p>
+                        <div className="mt-2 space-y-1.5">
+                          {q.payment_terms.map((t, i) => (
+                            <p key={i} className="flex justify-between gap-3 text-slate-700">
+                              <span>
+                                {t.label} ({t.percent}%)
+                              </span>
+                              <b className="text-ink">{idr((price * Number(t.percent)) / 100)}</b>
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-700">
+                      {q.guarantee && (
+                        <span className="flex items-center gap-2">
+                          <ShieldCheck size={16} className="text-emerald-500" /> Garansi {q.guarantee}
+                        </span>
+                      )}
+                      {q.revisions !== null && q.revisions !== undefined && (
+                        <span className="flex items-center gap-2">
+                          <RefreshCw size={16} className="text-emerald-500" /> {q.revisions}x revisi
+                        </span>
+                      )}
+                      <span className="flex items-center gap-2">
+                        <BadgeCheck size={16} className="text-emerald-500" /> Kontrak resmi & invoice transparan
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {s.kind === 'maintenance' && (
+                  <div>
+                    <p className="text-base font-bold text-ink">
+                      Biaya Layanan: {idr(q.maintenance_fee)} / {q.maintenance_period === 'bulan' ? 'Bulan' : 'Tahun'}
+                    </p>
+                    {q.maintenance_note && (
+                      <div className="mt-3">
+                        <ProposalBody text={fillClient(q.maintenance_note, client.company_name)} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {s.closing && (
+                  <div className="mt-8 text-[15px] text-slate-700">
+                    <p>Hormat kami,</p>
+                    <p className="mt-10 font-bold uppercase text-ink">{brand.name}</p>
+                    {brand.subBrand && <p>{brand.subBrand}</p>}
+                    <div className="mt-4 text-sm text-slate-500">
+                      {[brand.phone, brand.website, brand.email].filter(Boolean).map((c) => (
+                        <p key={c}>{c}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="mt-3 text-xs text-slate-500">Pembayaran via transfer bank atau QRIS. Invoice dikirim otomatis.</p>
-            </Card>
-          )}
-        </div>
-
-        <Card className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-700">
-          {q.guarantee && (
-            <span className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-emerald-500" /> Garansi {q.guarantee}
-            </span>
-          )}
-          {q.revisions !== null && q.revisions !== undefined && (
-            <span className="flex items-center gap-2">
-              <RefreshCw size={16} className="text-emerald-500" /> {q.revisions}x revisi
-            </span>
-          )}
-          <span className="flex items-center gap-2">
-            <BadgeCheck size={16} className="text-emerald-500" /> Kontrak resmi & invoice transparan
-          </span>
+            </section>
+          ))}
         </Card>
 
         {(portfolio.length > 0 || testimonials.length > 0) && (
