@@ -38,6 +38,7 @@ import StaffProgressBoard from './accounting/StaffProgressBoard'
 import ProfitabilityReport from './accounting/ProfitabilityReport'
 import TimeLogsEditor from './accounting/TimeLogsEditor'
 import ContractsEditor from './accounting/ContractsEditor'
+import QuotationsList from './quotations/QuotationsList'
 import MonthlyRecap from './ledger/MonthlyRecap'
 import ProfitLoss from './ledger/ProfitLoss'
 import BalanceSheet from './ledger/BalanceSheet'
@@ -78,6 +79,7 @@ const TAB_COMPONENTS = {
   'acc-staff-progress': StaffProgressBoard,
   'acc-time-logs': TimeLogsEditor,
   'acc-contracts': ContractsEditor,
+  'acc-quotations': QuotationsList,
   'acc-invoices': InvoicesList,
   'acc-vendor-bills': VendorBillsEditor,
   'acc-subscriptions': SubscriptionsEditor,

@@ -1,4 +1,5 @@
 import {
+  ScrollText,
   BarChart3,
   Palette,
   Sparkles,
@@ -69,6 +70,7 @@ export const MENU_GROUPS = [
     icon: FolderOpen,
     roles: null,
     tabs: [
+      { id: 'acc-quotations', label: 'Penawaran', icon: ScrollText, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-transaction', label: 'Transaksi Baru', icon: FilePlus2, roles: ['owner', 'admin', 'staff'] },
       { id: 'acc-projects', label: 'Daftar Proyek', icon: FolderOpen, roles: null },
       { id: 'acc-assets', label: 'Rekap Aset Digital', icon: Globe, roles: null },

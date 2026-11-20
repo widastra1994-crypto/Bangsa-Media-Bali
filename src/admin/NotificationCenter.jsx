@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { AlertTriangle, Bell, Check, Clock, FileWarning, ShieldAlert, UserPlus } from 'lucide-react'
+import { AlertTriangle, Bell, Check, Clock, FileWarning, ScrollText, ShieldAlert, UserPlus } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { invoiceOutstanding } from '../lib/invoiceUtils'
 import ShareInvoice from './assets/ShareInvoice'
@@ -21,7 +21,7 @@ async function computeNotifications() {
     supabase
       .from('acc_admin_notifications')
       .select(
-        'id, asset_id, severity, title, body, tab, cycle_date, created_at, acc_notification_reads(user_id), acc_clients(company_name, pic_name, email, phone_primary), ' +
+        'id, kind, asset_id, severity, title, body, tab, cycle_date, created_at, acc_notification_reads(user_id), acc_clients(company_name, pic_name, email, phone_primary), ' +
           'acc_digital_assets(expiry_date, acc_asset_renewals(status, acc_invoices(id, invoice_number, status, total_amount, paid_amount, pph23_amount, due_date, public_token)))',
       )
       .gte('created_at', new Date(today.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString())
@@ -56,6 +56,21 @@ async function computeNotifications() {
   // Hanya tahap terbaru per aset, dan disembunyikan bila aset sudah diperpanjang.
   const seenAssets = new Set()
   ;(assetNotifs.data || []).forEach((n) => {
+    // Notifikasi penawaran (dibuka, minta revisi, disetujui, ditandatangani).
+    if (n.kind === 'quotation') {
+      items.push({
+        id: `n-${n.id}`,
+        dbId: n.id,
+        kind: n.kind,
+        unread: (n.acc_notification_reads || []).length === 0,
+        icon: ScrollText,
+        severity: n.severity,
+        title: n.title,
+        detail: n.body,
+        tab: n.tab,
+      })
+      return
+    }
     if (!n.acc_digital_assets || n.acc_digital_assets.expiry_date !== n.cycle_date) return
     const key = n.asset_id
     if (seenAssets.has(key)) return
@@ -189,7 +204,7 @@ export default function NotificationCenter({ onNavigate, allowedTabIds }) {
                   </button>
                   {item.dbId && (
                     <div className="mt-2 flex flex-wrap items-center gap-2 pl-9">
-                      {item.invoice ? (
+                      {item.kind === 'quotation' ? null : item.invoice ? (
                         <ShareInvoice compact invoice={item.invoice} client={item.client} onShared={() => markRead([item.dbId])} />
                       ) : (
                         <button type="button" onClick={() => go(item)} className="btn-secondary !px-2 !py-1 text-[11px]">

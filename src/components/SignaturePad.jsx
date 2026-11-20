@@ -13,7 +13,12 @@ export default function SignaturePad({ onChange, height = 160 }) {
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
     const point = e.touches ? e.touches[0] : e
-    return { x: point.clientX - rect.left, y: point.clientY - rect.top }
+    // Kanvas digambar 500px lalu diskalakan CSS (w-full): sesuaikan koordinat
+    // supaya goresan tepat di bawah jari/kursor di layar mana pun.
+    return {
+      x: ((point.clientX - rect.left) * canvas.width) / rect.width,
+      y: ((point.clientY - rect.top) * canvas.height) / rect.height,
+    }
   }
 
   const start = (e) => {

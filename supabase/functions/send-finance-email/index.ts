@@ -58,8 +58,12 @@ Deno.serve(async (req) => {
 
     const brand = brandName || 'Bangsa Media Bali'
     const isInvoice = type === 'invoice'
-    const subject = isInvoice ? `Invoice ${docNumber} dari ${brand}` : `Kuitansi Pembayaran ${docNumber} dari ${brand}`
-    const heading = isInvoice ? 'Invoice / Tagihan' : 'Kuitansi Pembayaran'
+    const isQuote = type === 'quotation'
+    const subject = isQuote ? `Penawaran ${docNumber} dari ${brand}` : isInvoice ? `Invoice ${docNumber} dari ${brand}` : `Kuitansi Pembayaran ${docNumber} dari ${brand}`
+    const heading = isQuote ? 'Penawaran Layanan' : isInvoice ? 'Invoice / Tagihan' : 'Kuitansi Pembayaran'
+    const intro = isQuote
+      ? 'Terima kasih atas kesempatannya. Berikut pilihan paket yang kami tawarkan. Detail lengkap, timeline, dan persetujuan online ada di tombol di bawah.'
+      : isInvoice ? 'Berikut kami sampaikan rincian tagihan Anda:' : 'Terima kasih, pembayaran Anda telah kami terima. Berikut kuitansi resminya:'
 
     const itemsRows = Array.isArray(items) && items.length
       ? items.map((it: { label: string; amount: number }) => `
@@ -77,11 +81,11 @@ Deno.serve(async (req) => {
         <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:24px;">
           <h2 style="margin-top:0;">${heading}</h2>
           <p>Yth. <strong>${clientName || 'Pelanggan'}</strong>,</p>
-          <p>${isInvoice ? 'Berikut kami sampaikan rincian tagihan Anda:' : 'Terima kasih, pembayaran Anda telah kami terima. Berikut kuitansi resminya:'}</p>
+          <p>${intro}</p>
           <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">
-            <tr><td style="padding:8px 0;color:#64748b;">Nomor ${isInvoice ? 'Invoice' : 'Kuitansi'}</td><td style="padding:8px 0;text-align:right;font-weight:bold;">${docNumber}</td></tr>
+            <tr><td style="padding:8px 0;color:#64748b;">Nomor ${isQuote ? 'Penawaran' : isInvoice ? 'Invoice' : 'Kuitansi'}</td><td style="padding:8px 0;text-align:right;font-weight:bold;">${docNumber}</td></tr>
             ${itemsRows}
-            <tr><td style="padding:12px 0;font-weight:bold;border-top:2px solid #0f172a;">Total</td><td style="padding:12px 0;text-align:right;font-weight:bold;border-top:2px solid #0f172a;">${formatIDR(amount)}</td></tr>
+            <tr><td style="padding:12px 0;font-weight:bold;border-top:2px solid #0f172a;">${isQuote ? 'Mulai dari' : 'Total'}</td><td style="padding:12px 0;text-align:right;font-weight:bold;border-top:2px solid #0f172a;">${formatIDR(amount)}</td></tr>
             ${isInvoice && dueDate ? `<tr><td style="padding:8px 0;color:#64748b;">Jatuh Tempo</td><td style="padding:8px 0;text-align:right;">${dueDate}</td></tr>` : ''}
           </table>
           ${typeof link === 'string' && link.startsWith('https://') ? `<p style="text-align:center;margin:24px 0;"><a href="${link}" style="background:#0f62fe;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;">${linkLabel || "Lihat & Unduh Invoice"}</a></p>` : ""}
