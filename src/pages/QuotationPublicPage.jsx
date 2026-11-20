@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { BadgeCheck, Briefcase, CalendarClock, CheckCircle2, Clock, Download, FileSignature, ListChecks, MessageCircle, Receipt, RefreshCw, ShieldCheck, Star } from 'lucide-react'
+import { BadgeCheck, CalendarClock, CheckCircle2, Clock, Download, FileSignature, ListChecks, MessageCircle, Receipt, RefreshCw, ShieldCheck, Star } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { useContent } from '../context/ContentContext'
 import SignaturePad from '../components/SignaturePad'
@@ -14,7 +14,6 @@ const downloadProposalPdf = (...args) => import('../lib/pdfGenerator').then((m) 
 const idr = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 const formatDate = (d) => (d ? new Date(d.length === 10 ? `${d}T00:00:00` : d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-')
 const daysLeft = (d) => (d ? Math.round((new Date(`${d}T00:00:00`) - new Date(new Date().toDateString())) / 86400000) : null)
-const PORTFOLIO_CATEGORY = { website: 'Website', system: 'ERP/POS', marketing: 'Ads', design: 'UI/UX' }
 
 function Card({ children, className = '' }) {
   return <div className={`rounded-3xl bg-white p-5 shadow-card sm:p-7 ${className}`}>{children}</div>
@@ -77,8 +76,6 @@ export default function QuotationPublicPage() {
   const price = Number(chosen?.price) || 0
   const open = ['sent', 'viewed', 'revision_requested'].includes(q.status) && !q.expired
   const left = daysLeft(q.valid_until)
-  const portfolio = (content.portfolio?.items || []).filter((p) => !PORTFOLIO_CATEGORY[q.service_type] || p.category === PORTFOLIO_CATEGORY[q.service_type]).slice(0, 3)
-  const testimonials = (content.testimonials?.items || []).slice(0, 2)
   const waLink = (text) => `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`
   const docSections = []
   const rawSections = q.sections?.length
@@ -299,33 +296,6 @@ export default function QuotationPublicPage() {
             </section>
           ))}
         </Card>
-
-        {(portfolio.length > 0 || testimonials.length > 0) && (
-          <Card>
-            <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-              <Briefcase size={16} className="text-ebtblue" /> Hasil kerja & kata klien kami
-            </p>
-            {portfolio.length > 0 && (
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                {portfolio.map((p) => (
-                  <a key={p.id} href={`/portofolio/${p.slug}`} target="_blank" rel="noreferrer" className="rounded-2xl border border-slate-200 p-3 hover:border-sky-300">
-                    <p className="text-sm font-semibold text-ink">{p.title}</p>
-                    <p className="mt-1 line-clamp-3 text-xs text-slate-500">{p.description}</p>
-                  </a>
-                ))}
-              </div>
-            )}
-            {testimonials.map((t) => (
-              <blockquote key={t.id} className="mt-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
-                “{t.text}”
-                <footer className="mt-1 text-xs text-slate-500">
-                  {t.name}
-                  {t.company ? `, ${t.company}` : ''}
-                </footer>
-              </blockquote>
-            ))}
-          </Card>
-        )}
 
         {done && <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{done}</p>}
 
